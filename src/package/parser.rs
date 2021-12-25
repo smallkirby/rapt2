@@ -5,6 +5,7 @@
 use std::str::FromStr;
 
 use super::{error::PackageError, package::*};
+use crate::util::*;
 
 pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
   if !content.starts_with("Package: ") {
@@ -57,6 +58,18 @@ pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
   } else {
     Ok(package)
   }
+}
+
+pub fn parse_entries(entries: &str) -> Result<Vec<Package>, PackageError> {
+  let blocks = split_by_empty_line(entries);
+  let entries: Vec<String> = blocks.into_iter().map(|block| block.join("\n")).collect();
+  let mut packages = vec![];
+
+  for entry in &entries {
+    packages.push(parse_entry(entry)?);
+  }
+
+  Ok(packages)
 }
 
 #[cfg(test)]

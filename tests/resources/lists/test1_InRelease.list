@@ -1,0 +1,48 @@
+Package: vim
+Architecture: amd64
+Version: 2:8.1.2269-1ubuntu5
+Priority: optional
+Section: editors
+Origin: Ubuntu
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Debian Vim Maintainers <pkg-vim-maintainers@lists.alioth.debian.org>
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Installed-Size: 3038
+Provides: editor
+Depends: vim-common (= 2:8.1.2269-1ubuntu5), vim-runtime (= 2:8.1.2269-1ubuntu5), libacl1 (>= 2.2.23), libc6 (>= 2.29), libcanberra0 (>= 0.2), libgpm2 (>= 1.20.7), libpython3.8 (>= 3.8.2), libselinux1 (>= 1.32), libtinfo6 (>= 6)
+Suggests: ctags, vim-doc, vim-scripts
+Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
+Size: 1237624
+MD5sum: 198ccbb07a9fc8ebe67a213eab6a3e96
+SHA1: 796c962d044f99a81b187211e6ce9a0a44b8d5d1
+SHA256: 1e38f267bf4c06e424b166e8d666ffd6ce25c657012892d099651bee18a2c834
+Homepage: https://www.vim.org/
+Description: Vi IMproved - enhanced vi editor
+Task: server, cloud-image, lubuntu-desktop
+Description-md5: 59e8b8f7757db8b53566d5d119872de8
+
+Package: gcc
+Architecture: amd64
+Version: 4:9.3.0-1ubuntu2
+Priority: optional
+Section: devel
+Source: gcc-defaults (1.185.1ubuntu2)
+Origin: Ubuntu
+Maintainer: Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>
+Original-Maintainer: Debian GCC Maintainers <debian-gcc@lists.debian.org>
+Bugs: https://bugs.launchpad.net/ubuntu/+filebug
+Installed-Size: 50
+Provides: c-compiler, gcc-x86-64-linux-gnu (= 4:9.3.0-1ubuntu2)
+Depends: cpp (= 4:9.3.0-1ubuntu2), gcc-9 (>= 9.3.0-3~)
+Recommends: libc6-dev | libc-dev
+Suggests: gcc-multilib, make, manpages-dev, autoconf, automake, libtool, flex, bison, gdb, gcc-doc
+Conflicts: gcc-doc (<< 1:2.95.3)
+Filename: pool/main/g/gcc-defaults/gcc_9.3.0-1ubuntu2_amd64.deb
+Size: 5208
+MD5sum: c8434d667d10beb0f15ae2e175ead386
+SHA1: ac589aa5799c3705383a16679fd9e968bcc6385e
+SHA256: 78ab6a8841c68300ba39992e8e33190371e133b3592c601ed3052d54e2ba59ea
+Description: GNU C compiler
+Task: ubuntustudio-video, ubuntu-mate-core, ubuntu-mate-desktop
+Description-md5: c7efd71c7c651a9ac8b2adf36b137790
+Build-Essential: yes

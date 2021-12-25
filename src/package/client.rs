@@ -2,8 +2,9 @@
  This file implements an IO reader of Package files.
 */
 
-use super::error::PackageError;
+use super::{error::PackageError, package::Package, parser};
 
+use std::fs;
 use std::path::{Path, PathBuf};
 
 pub struct PackageClient {
@@ -24,5 +25,19 @@ impl PackageClient {
     } else {
       Ok(Self { cache_dir })
     }
+  }
+
+  pub fn read_single_file(&self, filename: &str) -> Result<Vec<Package>, PackageError> {
+    let pathbuf = self.cache_dir.join(filename);
+    let path = pathbuf.as_path();
+
+    if !path.exists() || !path.is_file() {
+      return Err(PackageError::FileNotFound {
+        target: path.to_str().unwrap().into(),
+      });
+    }
+
+    let content = fs::read_to_string(path)?;
+    parser::parse_entries(&content)
   }
 }

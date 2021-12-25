@@ -53,7 +53,7 @@ impl SourceClient {
       sources.push(self.read_single_file_internal(path)?);
     }
 
-    Ok(sources.into_iter().unique().flatten().collect())
+    Ok(sources.into_iter().flatten().unique().collect())
   }
 
   // find and return candidate list files.

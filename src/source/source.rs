@@ -5,6 +5,7 @@
 use std::str::FromStr;
 
 // archive type of the source.
+#[derive(PartialEq, Debug)]
 pub enum ArchivedType {
   DEB,    // binary package
   DEBSRC, // source package
@@ -22,6 +23,7 @@ impl FromStr for ArchivedType {
   }
 }
 
+#[derive(PartialEq, Debug)]
 pub enum Component {
   MAIN,       // free software, fully supported by Ubuntu
   RESTRICTED, // proprietary
@@ -44,9 +46,61 @@ impl FromStr for Component {
 }
 
 // entry of `sources.list`.
+#[derive(Debug)]
 pub struct Source {
   pub archive_type: ArchivedType,
   pub url: String,
   pub distro: String,
   pub components: Vec<Component>,
+}
+
+impl PartialEq for Source {
+  fn eq(&self, other: &Self) -> bool {
+    if !(self.archive_type == other.archive_type
+      && self.url == other.url
+      && self.distro == other.distro)
+    {
+      return false;
+    }
+    if self.components.len() != other.components.len() {
+      return false;
+    }
+    for component in &self.components {
+      if !other.components.contains(component) {
+        return false;
+      }
+    }
+
+    true
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn source_partial_eq() {
+    // check if PartialEq trait is correctly implemented.
+    let source1 = Source {
+      archive_type: ArchivedType::DEB,
+      url: "https://hogehoge.com/".into(),
+      distro: "focal".into(),
+      components: vec![Component::MAIN, Component::MULTIVERSE],
+    };
+    let source2 = Source {
+      archive_type: ArchivedType::DEB,
+      url: "https://fugafuga.com/".into(),
+      distro: "focal".into(),
+      components: vec![Component::UNIVERSE, Component::MAIN],
+    };
+    let source3 = Source {
+      archive_type: ArchivedType::DEB,
+      url: "https://fugafuga.com/".into(),
+      distro: "focal".into(),
+      components: vec![Component::MAIN, Component::UNIVERSE],
+    };
+    assert_ne!(source1, source2);
+    assert_eq!(source2, source3);
+  }
 }

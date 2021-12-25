@@ -30,7 +30,7 @@ impl SourceClient {
   fn read_single_file(&self, filename: &str) -> Result<Vec<Source>, SourceError> {
     let pathbuf = self.source_dir.join(filename);
     let path = Path::new(&pathbuf);
-    if path.exists() || !path.is_file() {
+    if !path.exists() || !path.is_file() {
       return Err(SourceError::FileNotFound {
         target: path.to_str().unwrap().into(),
       });

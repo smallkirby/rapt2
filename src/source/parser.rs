@@ -21,7 +21,9 @@ fn parse_line(line: &str) -> Result<Option<Source>, SourceError> {
     };
     parts = parts[0..ix].to_vec();
   }
-  if parts.len() < 4 {
+  if parts.len() == 0 {
+    return Ok(None);
+  } else if parts.len() < 4 {
     return Err(SourceError::InvalidFormat { msg: line.into() });
   }
 
@@ -75,4 +77,78 @@ pub fn parse_lines(content: &str) -> Result<Vec<Source>, SourceError> {
   }
 
   Ok(sources)
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn parse_single_line() {
+    // check if normal single line entry is correctly parsed
+    let answer = Source {
+      archive_type: ArchivedType::DEB,
+      url: "http://jp.archive.ubuntu.com/ubuntu/".into(),
+      distro: "focal".into(),
+      components: vec![Component::MAIN, Component::RESTRICTED],
+    };
+    let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted";
+    let parsed = parse_line(line).unwrap().unwrap();
+    assert_eq!(answer, parsed);
+
+    // check if empty line is correctly parsed
+    let line = "";
+    let parsed = parse_line(line).unwrap();
+    assert_eq!(None, parsed);
+
+    // check if normal line with comment is correctly parsed
+    let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted # this is comment ";
+    let parsed = parse_line(line).unwrap().unwrap();
+    assert_eq!(answer, parsed);
+
+    // check if invalid line can't be parsed
+    let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal # main restricted";
+    let parsed = parse_line(line);
+    assert_eq!(parsed.is_err(), true);
+  }
+
+  #[test]
+  fn parse_multi_lines() {
+    let s1 = Source {
+      archive_type: ArchivedType::DEBSRC,
+      url: "http://archive.ubuntu.com/ubuntu".into(),
+      distro: "focal".into(),
+      components: vec![Component::MAIN, Component::RESTRICTED],
+    };
+    let s2 = Source {
+      archive_type: ArchivedType::DEB,
+      url: "http://jp.archive.ubuntu.com/ubuntu/".into(),
+      distro: "focal".into(),
+      components: vec![Component::MAIN, Component::RESTRICTED],
+    };
+    let s3 = Source {
+      archive_type: ArchivedType::DEBSRC,
+      url: "http://jp.archive.ubuntu.com/ubuntu/".into(),
+      distro: "focal".into(),
+      components: vec![
+        Component::MAIN,
+        Component::RESTRICTED,
+        Component::MULTIVERSE,
+        Component::UNIVERSE,
+      ],
+    };
+    let answers = vec![s1, s2, s3];
+
+    let lines = "
+      deb-src http://archive.ubuntu.com/ubuntu focal main restricted #Added by software-properties
+
+      # See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
+      # newer versions of the distribution.
+      deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted
+      deb-src http://jp.archive.ubuntu.com/ubuntu/ focal restricted multiverse universe main #Added by software-properties
+    ";
+
+    let sources = parse_lines(lines).unwrap();
+    assert_eq!(answers, sources);
+  }
 }

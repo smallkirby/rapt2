@@ -11,4 +11,7 @@ pub enum DownloadError {
 
   #[error("error while extracting gziped content")]
   UnzipFailed(#[from] std::io::Error),
+
+  #[error("file/dir for caching not found: {name:?}")]
+  FileNotFound { name: String },
 }

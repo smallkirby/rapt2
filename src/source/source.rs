@@ -106,13 +106,8 @@ impl Source {
   }
 
   pub fn cache_filename(&self) -> String {
-    let ext = match self.archive_type {
-      ArchivedType::DEB => "Package",
-      ArchivedType::DEBSRC => "Sources",
-    };
-    let mut text = String::from(self.url.split("://").collect::<Vec<&str>>()[1]);
-
-    text
+    let text = String::from(self.packages_url().split("://").collect::<Vec<&str>>()[1]);
+    text.replace("/", "_")[..text.len() - 3].into()
   }
 }
 
@@ -123,30 +118,24 @@ mod tests {
   #[test]
   fn source_partial_eq() {
     // check if PartialEq trait is correctly implemented.
-    let source1: HashSet<_> = Source::from(
+    let source1 = Source::from(
       ArchivedType::DEB,
       "https://hogehoge.com/",
       "focal",
       vec![Component::MAIN, Component::MULTIVERSE],
-    )
-    .into_iter()
-    .collect();
+    );
     let source2 = Source::from(
       ArchivedType::DEB,
       "https://fugafuga.com/",
       "focal",
       vec![Component::UNIVERSE, Component::MAIN],
-    )
-    .into_iter()
-    .collect();
-    let source3: HashSet<Source> = Source::from(
+    );
+    let source3 = Source::from(
       ArchivedType::DEB,
       "https://fugafuga.com/",
       "focal",
       vec![Component::MAIN, Component::UNIVERSE],
-    )
-    .into_iter()
-    .collect();
+    );
 
     assert_ne!(source1, source2);
     assert_eq!(source2, source3);

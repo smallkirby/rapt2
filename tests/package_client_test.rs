@@ -1,6 +1,6 @@
 extern crate rapt2;
 
-use rapt2::package::{client::PackageClient, package::*};
+use rapt2::package::client::PackageClient;
 
 use std::path::PathBuf;
 

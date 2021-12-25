@@ -4,6 +4,7 @@
 
 use super::{error::PackageError, package::Package, parser};
 
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -27,7 +28,7 @@ impl PackageClient {
     }
   }
 
-  pub fn read_single_file(&self, filename: &str) -> Result<Vec<Package>, PackageError> {
+  pub fn read_single_file(&self, filename: &str) -> Result<HashSet<Package>, PackageError> {
     let pathbuf = self.cache_dir.join(filename);
     let path = pathbuf.as_path();
 

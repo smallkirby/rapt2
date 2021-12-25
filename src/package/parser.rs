@@ -2,6 +2,7 @@
  This file implements parse of Package file
 */
 
+use std::collections::HashSet;
 use std::str::FromStr;
 
 use super::{error::PackageError, package::*};
@@ -60,13 +61,13 @@ pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
   }
 }
 
-pub fn parse_entries(entries: &str) -> Result<Vec<Package>, PackageError> {
+pub fn parse_entries(entries: &str) -> Result<HashSet<Package>, PackageError> {
   let blocks = split_by_empty_line(entries);
   let entries: Vec<String> = blocks.into_iter().map(|block| block.join("\n")).collect();
-  let mut packages = vec![];
+  let mut packages = HashSet::new();
 
   for entry in &entries {
-    packages.push(parse_entry(entry)?);
+    packages.insert(parse_entry(entry)?);
   }
 
   Ok(packages)

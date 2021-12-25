@@ -5,6 +5,7 @@
 use super::{error::SourceError, parser, source::*};
 
 use itertools::Itertools;
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -28,12 +29,12 @@ impl SourceClient {
     }
   }
 
-  pub fn read_single_file(&self, filename: &str) -> Result<Vec<Source>, SourceError> {
+  pub fn read_single_file(&self, filename: &str) -> Result<HashSet<Source>, SourceError> {
     let pathbuf = self.source_dir.join(filename);
     self.read_single_file_internal(pathbuf.as_path().to_owned())
   }
 
-  fn read_single_file_internal(&self, path: PathBuf) -> Result<Vec<Source>, SourceError> {
+  fn read_single_file_internal(&self, path: PathBuf) -> Result<HashSet<Source>, SourceError> {
     if !path.exists() || !path.is_file() {
       return Err(SourceError::FileNotFound {
         target: path.to_str().unwrap().into(),
@@ -46,7 +47,7 @@ impl SourceClient {
   }
 
   // search source directory and read all files
-  pub fn read_all(&self) -> Result<Vec<Source>, SourceError> {
+  pub fn read_all(&self) -> Result<HashSet<Source>, SourceError> {
     let mut sources = vec![];
     let list_pathes = self.find_candidates();
     for path in list_pathes {

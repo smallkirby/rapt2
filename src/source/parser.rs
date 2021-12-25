@@ -7,7 +7,7 @@ use super::{error::SourceError, source::Source, source::*};
 use std::collections::HashSet;
 use std::str::FromStr;
 
-fn parse_line(line: &str) -> Result<Vec<Source>, SourceError> {
+fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
   assert!(!line.contains("\n"));
 
   // remove comments
@@ -18,12 +18,12 @@ fn parse_line(line: &str) -> Result<Vec<Source>, SourceError> {
   let mut parts: Vec<&str> = line.trim().split_whitespace().collect();
   if let Some(ix) = comment_position {
     if ix == 0 {
-      return Ok(vec![]);
+      return Ok(HashSet::new());
     };
     parts = parts[0..ix].to_vec();
   }
   if parts.len() == 0 {
-    return Ok(vec![]);
+    return Ok(HashSet::new());
   } else if parts.len() < 4 {
     return Err(SourceError::InvalidFormat { msg: line.into() });
   }
@@ -69,8 +69,8 @@ fn parse_line(line: &str) -> Result<Vec<Source>, SourceError> {
   )
 }
 
-pub fn parse_lines(content: &str) -> Result<Vec<Source>, SourceError> {
-  let mut sources = vec![];
+pub fn parse_lines(content: &str) -> Result<HashSet<Source>, SourceError> {
+  let mut sources = HashSet::new();
   for line in content.lines() {
     match parse_line(line) {
       Ok(s) => {
@@ -90,27 +90,25 @@ mod tests {
   #[test]
   fn parse_single_line() {
     // check if normal single line entry is correctly parsed
-    let answer: HashSet<_> = Source::from(
+    let answer = Source::from(
       ArchivedType::DEB,
       "http://jp.archive.ubuntu.com/ubuntu/",
       "focal",
       vec![Component::MAIN, Component::RESTRICTED],
-    )
-    .into_iter()
-    .collect();
+    );
     let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted";
-    let parsed: HashSet<_> = parse_line(line).unwrap().into_iter().collect();
+    let parsed = parse_line(line).unwrap();
     assert_eq!(answer, parsed);
 
     let empty: HashSet<Source> = HashSet::new();
     // check if empty line is correctly parsed
     let line = "";
-    let parsed: HashSet<_> = parse_line(line).unwrap().into_iter().collect();
+    let parsed = parse_line(line).unwrap();
     assert_eq!(empty, parsed);
 
     // check if normal line with comment is correctly parsed
     let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted # this is comment ";
-    let parsed: HashSet<_> = parse_line(line).unwrap().into_iter().collect();
+    let parsed = parse_line(line).unwrap();
     assert_eq!(answer, parsed);
 
     // check if invalid line can't be parsed
@@ -156,7 +154,7 @@ mod tests {
       deb-src http://jp.archive.ubuntu.com/ubuntu/ focal restricted multiverse universe main #Added by software-properties
     ";
 
-    let sources: HashSet<_> = parse_lines(lines).unwrap().into_iter().collect();
+    let sources = parse_lines(lines).unwrap();
     assert_eq!(answers_set, sources);
   }
 }

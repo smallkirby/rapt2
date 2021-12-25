@@ -12,11 +12,7 @@ fn test_sourcelist_read() {
   // read single file
   let answer: HashSet<Source> = helper::sources_list_sources().into_iter().collect();
   let client = SourceClient::new(PathBuf::from("./tests/resources/sources")).unwrap();
-  let sources: HashSet<_> = client
-    .read_single_file("sources.list")
-    .unwrap()
-    .into_iter()
-    .collect();
+  let sources = client.read_single_file("sources.list").unwrap();
   assert_eq!(answer, sources);
 
   // read all files

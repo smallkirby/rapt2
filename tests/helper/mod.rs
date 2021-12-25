@@ -2,8 +2,10 @@ extern crate rapt2;
 
 use rapt2::{package::package::*, source::source::*};
 
+use std::collections::HashSet;
+
 // Source contents in `tests/resources/sources.list`.
-pub fn sources_list_sources() -> Vec<Source> {
+pub fn sources_list_sources() -> HashSet<Source> {
   let s1 = Source::from(
     ArchivedType::DEBSRC,
     "http://archive.ubuntu.com/ubuntu",
@@ -32,7 +34,7 @@ pub fn sources_list_sources() -> Vec<Source> {
 }
 
 // Source contents in `tests/resources/sources.list.d/hoge.list`.
-pub fn sources_list_hoge() -> Vec<Source> {
+pub fn sources_list_hoge() -> HashSet<Source> {
   Source::from(
     ArchivedType::DEB,
     "http://jp.archive.ubuntu.com/ubuntu/",
@@ -42,7 +44,7 @@ pub fn sources_list_hoge() -> Vec<Source> {
 }
 
 // Source contents in `tests/resources/sources.list.d/fuga.list`.
-pub fn sources_list_fuga() -> Vec<Source> {
+pub fn sources_list_fuga() -> HashSet<Source> {
   Source::from(
     ArchivedType::DEB,
     "http://jp.archive.ubuntu.com/ubuntu/",
@@ -52,7 +54,7 @@ pub fn sources_list_fuga() -> Vec<Source> {
 }
 
 // Package contents in `tests/resources/lists/cache/test1_InRelease.list`.
-pub fn package_list_test1() -> Vec<Package> {
+pub fn package_list_test1() -> HashSet<Package> {
   vec![
     Package {
       name: "vim".into(),
@@ -85,4 +87,6 @@ pub fn package_list_test1() -> Vec<Package> {
       ..Default::default()
     },
   ]
+  .into_iter()
+  .collect()
 }

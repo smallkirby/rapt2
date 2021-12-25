@@ -74,7 +74,7 @@ impl Source {
     url: &str,
     distro: &str,
     components: Vec<Component>,
-  ) -> Vec<Self> {
+  ) -> HashSet<Self> {
     components
       .iter()
       .map(|component| Self {

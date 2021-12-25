@@ -4,7 +4,7 @@ use std::str::FromStr;
  This file defines structure of Package file of a repository.
 */
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct Package {
   pub name: String,
   pub version: String,
@@ -33,7 +33,7 @@ pub struct PackageVersion {
   pub version: String,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum Priority {
   REQUIRED,
   IMPORTANT,

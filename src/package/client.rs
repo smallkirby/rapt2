@@ -42,3 +42,18 @@ impl PackageClient {
     parser::parse_entries(&content)
   }
 }
+
+pub fn to_packages(content: &str) -> Result<HashSet<Package>, PackageError> {
+  parser::parse_entries(content)
+}
+
+fn get_installed_packages() -> Result<HashSet<Package>, PackageError> {
+  let dpkg_status_path = Path::new("/var/lib/dpkg/status");
+  if dpkg_status_path.is_file() {
+    parser::parse_entries(&fs::read_to_string(dpkg_status_path)?)
+  } else {
+    Err(PackageError::FileNotFound {
+      target: dpkg_status_path.to_string_lossy().to_string(),
+    })
+  }
+}

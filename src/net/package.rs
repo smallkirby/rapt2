@@ -36,7 +36,7 @@ impl PackageDownloader {
     })
   }
 
-  fn get(&self) -> Result<String, DownloadError> {
+  pub fn get(&self) -> Result<String, DownloadError> {
     let url = self.source.packages_url();
     let builder = self.client.get(url);
     match builder.send() {

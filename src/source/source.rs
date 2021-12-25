@@ -32,6 +32,18 @@ pub enum Component {
   MULTIVERSE, // (might) not free
 }
 
+impl Component {
+  pub fn to_string(&self) -> String {
+    match self {
+      Self::MAIN => "main",
+      Self::RESTRICTED => "restricted",
+      Self::UNIVERSE => "universe",
+      Self::MULTIVERSE => "multiverse",
+    }
+    .into()
+  }
+}
+
 impl FromStr for Component {
   type Err = ();
 
@@ -53,6 +65,33 @@ pub struct Source {
   pub url: String,
   pub distro: String,
   pub components: Vec<Component>,
+}
+
+impl Source {
+  pub fn packages_url(&self) -> Vec<String> {
+    let type_str = match self.archive_type {
+      ArchivedType::DEB => "binary-amd64",
+      ArchivedType::DEBSRC => "source",
+    };
+    let filename = match self.archive_type {
+      ArchivedType::DEB => "Packages",
+      ArchivedType::DEBSRC => "Sources",
+    };
+    self
+      .components
+      .iter()
+      .map(|component| {
+        format!(
+          "{}/dists/{}/{}/{}/{}.gz",
+          self.url,
+          self.distro,
+          component.to_string(),
+          type_str,
+          filename,
+        )
+      })
+      .collect()
+  }
 }
 
 impl Hash for Source {

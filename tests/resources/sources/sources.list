@@ -1,0 +1,8 @@
+# deb cdrom:[Ubuntu 20.04 LTS _Focal Fossa_ - Release amd64 (20200423)]/ focal main restricted
+deb-src http://archive.ubuntu.com/ubuntu focal main restricted #Added by software-properties
+
+# See http://help.ubuntu.com/community/UpgradeNotes for how to upgrade to
+# newer versions of the distribution.
+deb http://jp.archive.ubuntu.com/ubuntu/ focal main restricted
+deb-src http://jp.archive.ubuntu.com/ubuntu/ focal restricted multiverse universe main #Added by software-properties
+

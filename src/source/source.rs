@@ -5,7 +5,7 @@
 use std::str::FromStr;
 
 // archive type of the source.
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Eq, Hash, Clone)]
 pub enum ArchivedType {
   DEB,    // binary package
   DEBSRC, // source package
@@ -23,7 +23,7 @@ impl FromStr for ArchivedType {
   }
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Eq, Hash, Clone)]
 pub enum Component {
   MAIN,       // free software, fully supported by Ubuntu
   RESTRICTED, // proprietary
@@ -46,7 +46,7 @@ impl FromStr for Component {
 }
 
 // entry of `sources.list`.
-#[derive(Debug)]
+#[derive(Debug, Eq, Hash, Clone)]
 pub struct Source {
   pub archive_type: ArchivedType,
   pub url: String,

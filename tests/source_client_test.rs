@@ -2,6 +2,7 @@ extern crate rapt2;
 
 use rapt2::source::{client::SourceClient, source::*};
 
+use std::collections::HashSet;
 use std::path::PathBuf;
 
 mod helper;
@@ -15,7 +16,7 @@ fn test_sourcelist_read() {
   assert_eq!(answer, sources);
 
   // read all files
-  let answer: Vec<Source> = vec![
+  let answer: HashSet<Source> = vec![
     helper::sources_list_sources(),
     helper::sources_list_hoge(),
     helper::sources_list_fuga(),
@@ -24,5 +25,7 @@ fn test_sourcelist_read() {
   .flatten()
   .collect();
   let sources = client.read_all().unwrap();
-  assert_eq!(answer, sources);
+  let sources_hashset: HashSet<Source> = sources.into_iter().collect();
+  assert_eq!(sources_hashset.iter().all(|s| answer.contains(s)), true);
+  assert_eq!(answer.iter().all(|s| sources_hashset.contains(s)), true);
 }

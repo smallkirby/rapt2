@@ -2,6 +2,7 @@
  This file defines `sources.list` entry.
 */
 
+use std::hash::Hash;
 use std::str::FromStr;
 
 // archive type of the source.
@@ -23,7 +24,7 @@ impl FromStr for ArchivedType {
   }
 }
 
-#[derive(PartialEq, Debug, Eq, Hash, Clone)]
+#[derive(PartialEq, Debug, Eq, Hash, Clone, PartialOrd, Ord)]
 pub enum Component {
   MAIN,       // free software, fully supported by Ubuntu
   RESTRICTED, // proprietary
@@ -46,12 +47,21 @@ impl FromStr for Component {
 }
 
 // entry of `sources.list`.
-#[derive(Debug, Eq, Hash, Clone)]
+#[derive(Debug, Eq, Clone)]
 pub struct Source {
   pub archive_type: ArchivedType,
   pub url: String,
   pub distro: String,
   pub components: Vec<Component>,
+}
+
+impl Hash for Source {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.archive_type.hash(state);
+    self.url.hash(state);
+    self.distro.hash(state);
+    self.components.clone().sort().hash(state);
+  }
 }
 
 impl PartialEq for Source {

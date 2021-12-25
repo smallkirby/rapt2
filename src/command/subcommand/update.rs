@@ -6,7 +6,7 @@ use super::super::error::RaptError;
 use crate::{
   context::Context,
   net::package::PackageDownloader,
-  package::{client::*, package::*},
+  package::{client::*, dpkg, package::*},
   source::client::SourceClient,
 };
 
@@ -26,11 +26,9 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
     total_packages.extend(packages);
   }
 
-  // get already-installed packages information
-  unimplemented!();
-
   // check if there are upgradable pacakges
-  unimplemented!();
+  let obsolute_packages = dpkg::get_obsolute_packages(&total_packages)?;
+  println!("{:?}", obsolute_packages); // XXX
 
   Ok(())
 }

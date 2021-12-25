@@ -8,7 +8,7 @@ use std::str::FromStr;
 use super::{error::PackageError, package::*};
 use crate::util::*;
 
-pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
+fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageError> {
   if !content.starts_with("Package: ") {
     return Err(PackageError::InvalidFormat {
       msg: "given Package doesn't start with 'Package: ' field.".into(),
@@ -19,13 +19,39 @@ pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
     ..Default::default()
   };
 
-  for line in content.trim().lines() {
-    let parts: Vec<&str> = line.split(": ").collect();
-    if parts.len() != 2 {
-      return Err(PackageError::InvalidFormat { msg: line.into() });
+  let mut parsing_description = false;
+  let mut parsing_conffile = false;
+  let mut long_description = String::new();
+  let mut conffiles = vec![];
+  for line in content.lines() {
+    if parsing_description {
+      if line.starts_with(" ") {
+        long_description = long_description + line;
+        continue;
+      }
+      package.long_description = if long_description.len() != 0 {
+        Some(long_description.clone())
+      } else {
+        None
+      };
+      parsing_description = false;
     }
+    if parsing_conffile {
+      if line.starts_with(" ") {
+        conffiles.push(line.trim().to_string());
+        continue;
+      }
+      package.conffiles = conffiles.clone();
+      parsing_conffile = false;
+    }
+
+    let parts: Vec<&str> = line.split(": ").collect();
     let section = parts[0].trim().to_string();
-    let ent = parts[1].trim().to_string();
+    let ent = if parts.len() >= 2 {
+      parts[1..].join(": ")
+    } else {
+      "".into()
+    };
 
     match section.to_lowercase().as_str() {
       "package" => package.name = ent,
@@ -49,25 +75,53 @@ pub fn parse_entry(content: &str) -> Result<Package, PackageError> {
       "md5sum" => package.md5 = ent,
       "sha1" => package.sha1 = ent,
       "sha256" => package.sha256 = ent,
-      "description" => package.short_description = ent,
+      "description" => {
+        package.short_description = ent;
+        parsing_description = true;
+      }
+      "conffiles" => {
+        parsing_conffile = true;
+      }
       _ => continue,
     }
   }
 
-  if !package.valid() {
-    Err(PackageError::LackingField { msg: "".into() })
-  } else {
-    Ok(package)
+  match entry_type {
+    EntryType::FULL => {
+      if !package.valid() {
+        Err(PackageError::LackingField { msg: "".into() })
+      } else {
+        Ok(package)
+      }
+    }
+    EntryType::STATUS => {
+      if !package.valid_as_status() {
+        Err(PackageError::LackingField { msg: "".into() })
+      } else {
+        Ok(package)
+      }
+    }
   }
 }
 
 pub fn parse_entries(entries: &str) -> Result<HashSet<Package>, PackageError> {
+  do_parse_entries(entries, EntryType::FULL)
+}
+
+pub fn parse_entries_as_status(entries: &str) -> Result<HashSet<Package>, PackageError> {
+  do_parse_entries(entries, EntryType::STATUS)
+}
+
+fn do_parse_entries(
+  entries: &str,
+  entry_type: EntryType,
+) -> Result<HashSet<Package>, PackageError> {
   let blocks = split_by_empty_line(entries);
   let entries: Vec<String> = blocks.into_iter().map(|block| block.join("\n")).collect();
   let mut packages = HashSet::new();
 
   for entry in &entries {
-    packages.insert(parse_entry(entry)?);
+    packages.insert(parse_entry(entry, entry_type.clone())?);
   }
 
   Ok(packages)
@@ -119,7 +173,7 @@ mod tests {
       ..Default::default()
     };
 
-    let package = parse_entry(entry_str.trim()).unwrap();
+    let package = parse_entry(entry_str.trim(), EntryType::FULL).unwrap();
     assert_eq!(answer, package);
   }
 }

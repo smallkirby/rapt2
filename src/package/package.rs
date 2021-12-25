@@ -6,6 +6,7 @@ use std::str::FromStr;
 
 #[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct Package {
+  // shared?
   pub name: String,
   pub version: String,
   pub priority: Option<Priority>,
@@ -14,17 +15,32 @@ pub struct Package {
   pub maintainer: String,
   pub filename: String,
   pub size: u64,
+  pub short_description: String,
+  pub long_description: Option<String>,
+
+  // package information only
   pub md5: String,
   pub sha1: String,
   pub sha256: String,
-  pub short_description: String,
-  pub long_description: Option<String>,
+
+  // status information only
+  pub conffiles: Vec<String>,
 }
 
 impl Package {
   pub fn valid(&self) -> bool {
     !self.name.is_empty() && self.size != 0 && !self.filename.is_empty()
   }
+
+  pub fn valid_as_status(&self) -> bool {
+    !self.name.is_empty()
+  }
+}
+
+#[derive(Clone)]
+pub enum EntryType {
+  FULL,
+  STATUS,
 }
 
 #[derive(Debug, Default)]

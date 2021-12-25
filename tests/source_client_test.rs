@@ -10,9 +10,13 @@ mod helper;
 #[test]
 fn test_sourcelist_read() {
   // read single file
-  let answer = helper::sources_list_sources();
+  let answer: HashSet<Source> = helper::sources_list_sources().into_iter().collect();
   let client = SourceClient::new(PathBuf::from("./tests/resources/sources")).unwrap();
-  let sources = client.read_single_file("sources.list").unwrap();
+  let sources: HashSet<_> = client
+    .read_single_file("sources.list")
+    .unwrap()
+    .into_iter()
+    .collect();
   assert_eq!(answer, sources);
 
   // read all files
@@ -24,8 +28,8 @@ fn test_sourcelist_read() {
   .into_iter()
   .flatten()
   .collect();
+  let answer_set: HashSet<Source> = answer.into_iter().collect();
   let sources = client.read_all().unwrap();
   let sources_hashset: HashSet<Source> = sources.into_iter().collect();
-  assert_eq!(sources_hashset.iter().all(|s| answer.contains(s)), true);
-  assert_eq!(answer.iter().all(|s| sources_hashset.contains(s)), true);
+  assert_eq!(answer_set, sources_hashset);
 }

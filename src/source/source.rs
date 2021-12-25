@@ -2,6 +2,7 @@
  This file defines `sources.list` entry.
 */
 
+use std::collections::HashSet;
 use std::hash::Hash;
 use std::str::FromStr;
 
@@ -59,16 +60,33 @@ impl FromStr for Component {
 }
 
 // entry of `sources.list`.
-#[derive(Debug, Eq, Clone)]
+#[derive(Debug, Eq, Clone, PartialEq, Hash)]
 pub struct Source {
   pub archive_type: ArchivedType,
   pub url: String,
   pub distro: String,
-  pub components: Vec<Component>,
+  pub component: Component,
 }
 
 impl Source {
-  pub fn packages_url(&self) -> Vec<String> {
+  pub fn from(
+    archive_type: ArchivedType,
+    url: &str,
+    distro: &str,
+    components: Vec<Component>,
+  ) -> Vec<Self> {
+    components
+      .iter()
+      .map(|component| Self {
+        archive_type: archive_type.clone(),
+        url: url.into(),
+        distro: distro.into(),
+        component: component.clone(),
+      })
+      .collect()
+  }
+
+  pub fn packages_url(&self) -> String {
     let type_str = match self.archive_type {
       ArchivedType::DEB => "binary-amd64",
       ArchivedType::DEBSRC => "source",
@@ -77,50 +95,24 @@ impl Source {
       ArchivedType::DEB => "Packages",
       ArchivedType::DEBSRC => "Sources",
     };
-    self
-      .components
-      .iter()
-      .map(|component| {
-        format!(
-          "{}/dists/{}/{}/{}/{}.gz",
-          self.url,
-          self.distro,
-          component.to_string(),
-          type_str,
-          filename,
-        )
-      })
-      .collect()
+    format!(
+      "{}/dists/{}/{}/{}/{}.gz",
+      self.url,
+      self.distro,
+      self.component.to_string(),
+      type_str,
+      filename,
+    )
   }
-}
 
-impl Hash for Source {
-  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-    self.archive_type.hash(state);
-    self.url.hash(state);
-    self.distro.hash(state);
-    self.components.clone().sort().hash(state);
-  }
-}
+  pub fn cache_filename(&self) -> String {
+    let ext = match self.archive_type {
+      ArchivedType::DEB => "Package",
+      ArchivedType::DEBSRC => "Sources",
+    };
+    let mut text = String::from(self.url.split("://").collect::<Vec<&str>>()[1]);
 
-impl PartialEq for Source {
-  fn eq(&self, other: &Self) -> bool {
-    if !(self.archive_type == other.archive_type
-      && self.url == other.url
-      && self.distro == other.distro)
-    {
-      return false;
-    }
-    if self.components.len() != other.components.len() {
-      return false;
-    }
-    for component in &self.components {
-      if !other.components.contains(component) {
-        return false;
-      }
-    }
-
-    true
+    text
   }
 }
 
@@ -131,24 +123,31 @@ mod tests {
   #[test]
   fn source_partial_eq() {
     // check if PartialEq trait is correctly implemented.
-    let source1 = Source {
-      archive_type: ArchivedType::DEB,
-      url: "https://hogehoge.com/".into(),
-      distro: "focal".into(),
-      components: vec![Component::MAIN, Component::MULTIVERSE],
-    };
-    let source2 = Source {
-      archive_type: ArchivedType::DEB,
-      url: "https://fugafuga.com/".into(),
-      distro: "focal".into(),
-      components: vec![Component::UNIVERSE, Component::MAIN],
-    };
-    let source3 = Source {
-      archive_type: ArchivedType::DEB,
-      url: "https://fugafuga.com/".into(),
-      distro: "focal".into(),
-      components: vec![Component::MAIN, Component::UNIVERSE],
-    };
+    let source1: HashSet<_> = Source::from(
+      ArchivedType::DEB,
+      "https://hogehoge.com/",
+      "focal",
+      vec![Component::MAIN, Component::MULTIVERSE],
+    )
+    .into_iter()
+    .collect();
+    let source2 = Source::from(
+      ArchivedType::DEB,
+      "https://fugafuga.com/",
+      "focal",
+      vec![Component::UNIVERSE, Component::MAIN],
+    )
+    .into_iter()
+    .collect();
+    let source3: HashSet<Source> = Source::from(
+      ArchivedType::DEB,
+      "https://fugafuga.com/",
+      "focal",
+      vec![Component::MAIN, Component::UNIVERSE],
+    )
+    .into_iter()
+    .collect();
+
     assert_ne!(source1, source2);
     assert_eq!(source2, source3);
   }

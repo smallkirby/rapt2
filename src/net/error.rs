@@ -2,7 +2,6 @@
  This file defines Error type for `net` module.
 */
 
-use flate2::DecompressError;
 use thiserror::Error;
 
 #[derive(Error, Debug)]

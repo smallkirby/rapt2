@@ -4,9 +4,10 @@
 
 use super::version::*;
 
+use std::hash::Hash;
 use std::str::FromStr;
 
-#[derive(Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, Eq)]
 pub struct Package {
   // shared?
   pub name: String,
@@ -28,6 +29,20 @@ pub struct Package {
 
   // status information only
   pub conffiles: Vec<String>,
+}
+
+impl PartialEq for Package {
+  // XXX
+  fn eq(&self, other: &Self) -> bool {
+    self.name == other.name
+  }
+}
+
+// XXX use only `name` field for hashing
+impl Hash for Package {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.name.hash(state);
+  }
 }
 
 impl Package {

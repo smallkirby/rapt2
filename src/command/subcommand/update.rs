@@ -27,7 +27,8 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
   }
 
   // check if there are upgradable pacakges
-  let obsolute_packages = dpkg::get_obsolute_packages(&total_packages)?;
+  let dpkg_client = dpkg::DpkgClient::new(context.dpkg_dir.clone());
+  let obsolute_packages = dpkg_client.get_obsolute_packages(&total_packages)?;
   println!("{:?}", obsolute_packages); // XXX
 
   Ok(())

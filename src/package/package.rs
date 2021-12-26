@@ -47,7 +47,8 @@ impl Hash for Package {
 
 impl Package {
   pub fn valid(&self) -> bool {
-    !self.name.is_empty() && self.size != 0 && !self.filename.is_empty()
+    //!self.name.is_empty() && self.size != 0 && !self.filename.is_empty()
+    !self.name.is_empty() && !self.filename.is_empty()
   }
 
   pub fn valid_as_status(&self) -> bool {
@@ -55,7 +56,7 @@ impl Package {
   }
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum EntryType {
   FULL,
   STATUS,

@@ -2,6 +2,8 @@
  This file defines Error type for `package` module.
 */
 
+use super::package::EntryType;
+
 use std::io;
 use thiserror::Error;
 
@@ -19,6 +21,8 @@ pub enum PackageError {
   #[error("invalid field in Package entry: {field:?} = {value:?}")]
   InvalidField { field: String, value: String },
 
-  #[error("Package entry lacks information for constructing package information: {msg:?}")]
-  LackingField { msg: String },
+  #[error(
+    "Package entry lacks information for constructing package information: {msg:?} as {typ:?}"
+  )]
+  IncompleteEntry { msg: String, typ: EntryType },
 }

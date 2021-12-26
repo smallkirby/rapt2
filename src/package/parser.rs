@@ -90,14 +90,20 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
   match entry_type {
     EntryType::FULL => {
       if !package.valid() {
-        Err(PackageError::LackingField { msg: "".into() })
+        Err(PackageError::IncompleteEntry {
+          msg: content.into(),
+          typ: entry_type,
+        })
       } else {
         Ok(package)
       }
     }
     EntryType::STATUS => {
       if !package.valid_as_status() {
-        Err(PackageError::LackingField { msg: "".into() })
+        Err(PackageError::IncompleteEntry {
+          msg: content.into(),
+          typ: entry_type,
+        })
       } else {
         Ok(package)
       }

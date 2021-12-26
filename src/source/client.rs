@@ -16,7 +16,7 @@ pub struct SourceClient {
 impl SourceClient {
   pub fn new(source_dir: PathBuf) -> Result<Self, SourceError> {
     let path = Path::new(&source_dir);
-    if !path.exists() {
+    if !path.exists() && fs::create_dir(path).is_err() {
       Err(SourceError::FileNotFound {
         target: path.to_string_lossy().to_string(),
       })

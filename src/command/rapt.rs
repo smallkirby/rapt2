@@ -17,13 +17,13 @@ impl Rapt {
   }
 
   pub fn execute(&self) {
-    let result = match self.command {
-      SubCommand::UPDATE => update::execute(&self.context),
+    let result = match &self.command {
+      SubCommand::UPDATE { args } => update::execute(&self.context),
       _ => unimplemented!(),
     };
 
-    if let Err(_) = result {
-      unimplemented!();
+    if let Err(err) = result {
+      unimplemented!("{:?}", err);
     }
   }
 }

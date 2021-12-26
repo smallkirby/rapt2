@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use super::{error::PackageError, package::*, version::Version};
+use super::{error::PackageError, package::*, version::*};
 use crate::util::*;
 
 fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageError> {
@@ -82,6 +82,7 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
       "conffiles" => {
         parsing_conffile = true;
       }
+      "depends" => package.depends = DependsAnyOf::from(&ent).unwrap(),
       _ => continue,
     }
   }
@@ -129,6 +130,8 @@ fn do_parse_entries(
 
 #[cfg(test)]
 mod tests {
+  use crate::package::version;
+
   use super::*;
 
   #[test]
@@ -145,7 +148,7 @@ mod tests {
       Bugs: https://bugs.launchpad.net/ubuntu/+filebug
       Installed-Size: 3038
       Provides: editor
-      Depends: vim-common (= 2:8.1.2269-1ubuntu5), vim-runtime (= 2:8.1.2269-1ubuntu5), libacl1 (>= 2.2.23), libc6 (>= 2.29), libcanberra0 (>= 0.2), libgpm2 (>= 1.20.7), libpython3.8 (>= 3.8.2), libselinux1 (>= 1.32), libtinfo6 (>= 6)
+      Depends: vim-common (= 2:8.1.2269-1ubuntu5), vim-runtime (= 2:8.1.2269-1ubuntu5), libacl1 (>= 2.2.23)
       Suggests: ctags, vim-doc, vim-scripts
       Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
       Size: 1237624
@@ -170,6 +173,35 @@ mod tests {
       sha1: "796c962d044f99a81b187211e6ce9a0a44b8d5d1".into(),
       sha256: "1e38f267bf4c06e424b166e8d666ffd6ce25c657012892d099651bee18a2c834".into(),
       short_description: "Vi IMproved - enhanced vi editor".into(),
+      depends: vec![
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "vim-common".into(),
+            version: Some(VersionComp {
+              version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
+              operator: version::VersionCompOperator::EQ,
+            }),
+          }],
+        },
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "vim-runtime".into(),
+            version: Some(VersionComp {
+              version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
+              operator: version::VersionCompOperator::EQ,
+            }),
+          }],
+        },
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "libacl1".into(),
+            version: Some(VersionComp {
+              version: Version::from("2.2.23").unwrap(),
+              operator: version::VersionCompOperator::GE,
+            }),
+          }],
+        },
+      ],
       ..Default::default()
     };
 

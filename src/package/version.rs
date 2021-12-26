@@ -147,6 +147,61 @@ fn compare_version(s1: &str, s2: &str) -> cmp::Ordering {
   cmp::Ordering::Equal
 }
 
+#[derive(Debug, Default, PartialEq, Eq, Hash)]
+pub struct VersionComp {
+  pub version: Version,
+  pub operator: VersionCompOperator,
+}
+
+impl VersionComp {
+  pub fn from(s: &str) -> Result<Self, ()> {
+    match s.find(" ") {
+      Some(ix) => {
+        let ope_str = &s[0..ix];
+        let version_str = &s[ix + 1..];
+        Ok(Self {
+          version: Version::from(version_str).unwrap(),
+          operator: VersionCompOperator::from(ope_str),
+        })
+      }
+      None => {
+        Ok(Self {
+          version: Version::from(s).unwrap(),
+          operator: VersionCompOperator::EQ, // XXX
+        })
+      }
+    }
+  }
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+pub enum VersionCompOperator {
+  GT, // >, >>
+  GE, // >=
+  EQ, // =
+  LT, // <, <<
+  LE, // <=
+}
+
+impl Default for VersionCompOperator {
+  fn default() -> Self {
+    Self::EQ
+  }
+}
+
+impl VersionCompOperator {
+  pub fn from(s: &str) -> Self {
+    match s {
+      ">" | ">>" => Self::GT,
+      ">=" => Self::GE,
+      "=" => Self::EQ,
+      "<" | "<<" => Self::LT,
+      "<=" => Self::LE,
+      _ => panic!("unkwnon version comparator: {}", s),
+    }
+  }
+}
+
 /*
  Use customized ASCII lexical order.
    - `~` is smaller than any.

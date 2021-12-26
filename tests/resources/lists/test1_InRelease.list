@@ -9,7 +9,7 @@ Original-Maintainer: Debian Vim Maintainers <pkg-vim-maintainers@lists.alioth.de
 Bugs: https://bugs.launchpad.net/ubuntu/+filebug
 Installed-Size: 3038
 Provides: editor
-Depends: vim-common (= 2:8.1.2269-1ubuntu5), vim-runtime (= 2:8.1.2269-1ubuntu5), libacl1 (>= 2.2.23), libc6 (>= 2.29), libcanberra0 (>= 0.2), libgpm2 (>= 1.20.7), libpython3.8 (>= 3.8.2), libselinux1 (>= 1.32), libtinfo6 (>= 6)
+Depends: vim-common (= 2:8.1.2269-1ubuntu5), vim-runtime (= 2:8.1.2269-1ubuntu5), libacl1 (>= 2.2.23)
 Suggests: ctags, vim-doc, vim-scripts
 Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
 Size: 1237624

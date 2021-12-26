@@ -1,7 +1,7 @@
 extern crate rapt2;
 
 use rapt2::{
-  package::{package::*, version::Version},
+  package::{package::*, version::*},
   source::source::*,
 };
 
@@ -72,6 +72,35 @@ pub fn package_list_test1() -> HashSet<Package> {
       sha1: "796c962d044f99a81b187211e6ce9a0a44b8d5d1".into(),
       sha256: "1e38f267bf4c06e424b166e8d666ffd6ce25c657012892d099651bee18a2c834".into(),
       short_description: "Vi IMproved - enhanced vi editor".into(),
+      depends: vec![
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "vim-common".into(),
+            version: Some(VersionComp {
+              version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
+              operator: VersionCompOperator::EQ,
+            }),
+          }],
+        },
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "vim-runtime".into(),
+            version: Some(VersionComp {
+              version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
+              operator: VersionCompOperator::EQ,
+            }),
+          }],
+        },
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "libacl1".into(),
+            version: Some(VersionComp {
+              version: Version::from("2.2.23").unwrap(),
+              operator: VersionCompOperator::GE,
+            }),
+          }],
+        },
+      ],
       ..Default::default()
     },
     Package {
@@ -87,6 +116,26 @@ pub fn package_list_test1() -> HashSet<Package> {
       sha1: "ac589aa5799c3705383a16679fd9e968bcc6385e".into(),
       sha256: "78ab6a8841c68300ba39992e8e33190371e133b3592c601ed3052d54e2ba59ea".into(),
       short_description: "GNU C compiler".into(),
+      depends: vec![
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "cpp".into(),
+            version: Some(VersionComp {
+              version: Version::from("4:9.3.0-1ubuntu2").unwrap(),
+              operator: VersionCompOperator::EQ,
+            }),
+          }],
+        },
+        DependsAnyOf {
+          depends: vec![Depends {
+            package: "gcc-9".into(),
+            version: Some(VersionComp {
+              version: Version::from("9.3.0-3~").unwrap(),
+              operator: VersionCompOperator::GE,
+            }),
+          }],
+        },
+      ],
       ..Default::default()
     },
   ]

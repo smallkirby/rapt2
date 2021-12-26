@@ -2,7 +2,7 @@
  This file defines structure of Package file of a repository.
 */
 
-use super::version::Version;
+use super::version::*;
 
 use std::str::FromStr;
 
@@ -19,6 +19,7 @@ pub struct Package {
   pub size: u64,
   pub short_description: String,
   pub long_description: Option<String>,
+  pub depends: Vec<DependsAnyOf>,
 
   // package information only
   pub md5: String,
@@ -45,10 +46,53 @@ pub enum EntryType {
   STATUS,
 }
 
-#[derive(Debug, Default)]
-pub struct PackageVersion {
+#[derive(Debug, Default, Hash, PartialEq, Eq)]
+pub struct Depends {
   pub package: String,
-  pub version: Version,
+  pub version: Option<VersionComp>,
+}
+
+#[derive(Debug, Default, Hash, PartialEq, Eq)]
+pub struct DependsAnyOf {
+  pub depends: Vec<Depends>,
+}
+
+impl DependsAnyOf {
+  pub fn from(s: &str) -> Result<Vec<Self>, ()> {
+    let mut results: Vec<Self> = vec![];
+    let parts: Vec<&str> = s.trim().split(", ").collect();
+
+    for part in parts {
+      let or_parts: Vec<&str> = part.split(" | ").collect();
+      let mut any_of = vec![];
+
+      for or_part in or_parts {
+        match or_part.find("(") {
+          // eg: "libc6 (> 2.14)"
+          Some(ix) => {
+            let package_name = &or_part[0..ix - 1]; // eg: "libc6"
+            let version_str_tmp = &or_part[ix + 1..or_part.len() - 1]; // eg: "> 2.14""
+            let depends = Depends {
+              package: package_name.into(),
+              version: Some(VersionComp::from(version_str_tmp).unwrap()),
+            };
+            any_of.push(depends);
+          }
+          None => {
+            let depends = Depends {
+              package: or_part.trim().into(),
+              version: None,
+            };
+            any_of.push(depends);
+          }
+        };
+      }
+
+      results.push(Self { depends: any_of });
+    }
+
+    Ok(results)
+  }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

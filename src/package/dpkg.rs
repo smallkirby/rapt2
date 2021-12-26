@@ -55,7 +55,7 @@ impl DpkgClient {
       if candidate_new.version > package.version {
         results.push(PackageStatus {
           package,
-          status: DpkgInstalledStatus::OLD,
+          status: StatusComp::OLD,
         });
       }
     }
@@ -65,7 +65,7 @@ impl DpkgClient {
 }
 
 #[derive(Debug, PartialEq)]
-pub enum DpkgInstalledStatus {
+pub enum StatusComp {
   NOTINSTALLED,
   OLD,
   UPTODATE,
@@ -74,7 +74,7 @@ pub enum DpkgInstalledStatus {
 #[derive(Debug)]
 pub struct PackageStatus {
   package: Package,
-  status: DpkgInstalledStatus,
+  status: StatusComp,
 }
 
 #[cfg(test)]
@@ -97,7 +97,7 @@ mod tests {
     let dpkg_client = DpkgClient::new(PathBuf::from("./tests/resources/dpkg"));
     let obsolute_packages = dpkg_client.get_obsolute_packages(&packages).unwrap();
     assert_eq!(obsolute_packages.len(), 1);
-    assert_eq!(obsolute_packages[0].status, DpkgInstalledStatus::OLD);
+    assert_eq!(obsolute_packages[0].status, StatusComp::OLD);
     assert_eq!(obsolute_packages[0].package.name, "vim");
   }
 }

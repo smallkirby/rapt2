@@ -87,6 +87,12 @@ impl Source {
   }
 
   pub fn packages_url(&self) -> String {
+    let mut url = self.url.as_str();
+    if url.ends_with("/") {
+      let mut tmp = url.chars();
+      tmp.next_back().unwrap();
+      url = tmp.as_str();
+    }
     let type_str = match self.archive_type {
       ArchivedType::DEB => "binary-amd64",
       ArchivedType::DEBSRC => "source",
@@ -97,7 +103,7 @@ impl Source {
     };
     format!(
       "{}/dists/{}/{}/{}/{}.gz",
-      self.url,
+      url,
       self.distro,
       self.component.to_string(),
       type_str,

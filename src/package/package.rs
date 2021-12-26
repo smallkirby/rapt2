@@ -4,10 +4,11 @@
 
 use super::{dpkg, version::*};
 
+use std::collections::HashSet;
 use std::hash::Hash;
 use std::str::FromStr;
 
-#[derive(Debug, Default, Eq)]
+#[derive(Debug, Default, Eq, Clone)]
 pub struct Package {
   // shared?
   pub name: String,
@@ -61,6 +62,22 @@ impl Package {
   pub fn valid_as_status(&self) -> bool {
     !self.name.is_empty()
   }
+
+  pub fn extend(a: &mut HashSet<Self>, b: HashSet<Self>) {
+    let mut removal_targets = vec![];
+    for a_ent in a.iter() {
+      if let Some(b_ent) = b.get(&a_ent) {
+        if a_ent.version < b_ent.version {
+          removal_targets.push(a_ent.clone());
+        }
+      }
+    }
+
+    for target in removal_targets {
+      a.remove(&target);
+    }
+    a.extend(b);
+  }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -70,13 +87,13 @@ pub enum EntryType {
   STATUS,
 }
 
-#[derive(Debug, Default, Hash, PartialEq, Eq)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
 pub struct Depends {
   pub package: String,
   pub version: Option<VersionComp>,
 }
 
-#[derive(Debug, Default, Hash, PartialEq, Eq)]
+#[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
 pub struct DependsAnyOf {
   pub depends: Vec<Depends>,
 }
@@ -119,7 +136,7 @@ impl DependsAnyOf {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum Priority {
   REQUIRED,
   IMPORTANT,

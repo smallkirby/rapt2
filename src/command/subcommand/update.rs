@@ -57,7 +57,7 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
     let downloader = PackageDownloader::new(source, context.list_dir.clone())?;
     let package_content = downloader.get()?;
     let packages = to_packages(&package_content, EntryType::BINARY)?;
-    total_packages.extend(packages);
+    Package::extend(&mut total_packages, packages);
     progress.inc(1);
   }
   progress.abandon_with_message("Complete");

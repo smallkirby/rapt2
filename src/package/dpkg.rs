@@ -76,7 +76,7 @@ impl DpkgClient {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub struct DpkgStatusArea {
   pub want: DpkgStatusWant,
   pub flag: DpkgStatusFlag,
@@ -96,7 +96,7 @@ impl DpkgStatusArea {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DpkgStatusWant {
   INSTALL,
   HOLD,
@@ -117,7 +117,7 @@ impl DpkgStatusWant {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DpkgStatusFlag {
   REINSTREQ,
   HOLD,
@@ -138,7 +138,7 @@ impl DpkgStatusFlag {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DpkgStatusStatus {
   INSTALLED,
   NOTINSTALLED,

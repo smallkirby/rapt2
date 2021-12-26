@@ -4,7 +4,7 @@
 
 use crate::util::*;
 
-use std::{cmp, ops::Deref};
+use std::cmp;
 
 static NON_ALPHA_BIAS: u8 = 0x7F;
 static EMPTY_PSEUDO_ASCII_CODE: u8 = 0x1;
@@ -154,7 +154,7 @@ fn compare_version(s1: &str, s2: &str) -> cmp::Ordering {
   cmp::Ordering::Equal
 }
 
-#[derive(Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Debug, Default, PartialEq, Eq, Hash, Clone)]
 pub struct VersionComp {
   pub version: Version,
   pub operator: VersionCompOperator,
@@ -181,7 +181,7 @@ impl VersionComp {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum VersionCompOperator {
   GT, // >, >>
   GE, // >=

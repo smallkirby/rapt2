@@ -1,5 +1,5 @@
 Package: vim
-Status: deinstall ok config-files
+Status: install ok installed
 Priority: optional
 Section: editors
 Installed-Size: 3038

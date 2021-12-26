@@ -2,7 +2,7 @@
  This file defines structure of Package file of a repository.
 */
 
-use super::version::*;
+use super::{dpkg, version::*};
 
 use std::hash::Hash;
 use std::str::FromStr;
@@ -29,6 +29,7 @@ pub struct Package {
 
   // status information only
   pub conffiles: Vec<String>,
+  pub status: Option<dpkg::DpkgStatusArea>,
 }
 
 impl PartialEq for Package {

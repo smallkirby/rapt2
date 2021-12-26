@@ -21,9 +21,16 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
 
   let mut parsing_description = false;
   let mut parsing_conffile = false;
+  let mut parsing_unknown = false; // XXX
   let mut long_description = String::new();
   let mut conffiles = vec![];
   for line in content.lines() {
+    if parsing_unknown {
+      if line.starts_with(" ") {
+        continue;
+      }
+      parsing_unknown = false;
+    }
     if parsing_description {
       if line.starts_with(" ") {
         long_description = long_description + line;
@@ -83,36 +90,33 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
         parsing_conffile = true;
       }
       "depends" => package.depends = DependsAnyOf::from(&ent).unwrap(),
+      "files" | "checksums-sha1" | "checksums-sha256" | "package-list" => parsing_unknown = true,
       _ => continue,
     }
   }
 
-  match entry_type {
-    EntryType::FULL => {
-      if !package.valid() {
-        Err(PackageError::IncompleteEntry {
-          msg: content.into(),
-          typ: entry_type,
-        })
-      } else {
-        Ok(package)
-      }
-    }
-    EntryType::STATUS => {
-      if !package.valid_as_status() {
-        Err(PackageError::IncompleteEntry {
-          msg: content.into(),
-          typ: entry_type,
-        })
-      } else {
-        Ok(package)
-      }
-    }
+  let is_valid = match entry_type {
+    EntryType::BINARY => package.valid(),
+    EntryType::STATUS => package.valid_as_status(),
+    EntryType::SOURCE => package.valid_as_source(),
+  };
+
+  if is_valid {
+    Ok(package)
+  } else {
+    Err(PackageError::IncompleteEntry {
+      msg: content.into(),
+      typ: entry_type,
+    })
   }
 }
 
-pub fn parse_entries(entries: &str) -> Result<HashSet<Package>, PackageError> {
-  do_parse_entries(entries, EntryType::FULL)
+pub fn parse_entries_as_binary(entries: &str) -> Result<HashSet<Package>, PackageError> {
+  do_parse_entries(entries, EntryType::BINARY)
+}
+
+pub fn parse_entries_as_source(entries: &str) -> Result<HashSet<Package>, PackageError> {
+  do_parse_entries(entries, EntryType::SOURCE)
 }
 
 pub fn parse_entries_as_status(entries: &str) -> Result<HashSet<Package>, PackageError> {
@@ -211,7 +215,7 @@ mod tests {
       ..Default::default()
     };
 
-    let package = parse_entry(entry_str.trim(), EntryType::FULL).unwrap();
+    let package = parse_entry(entry_str.trim(), EntryType::BINARY).unwrap();
     assert_eq!(answer, package);
   }
 }

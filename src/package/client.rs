@@ -2,6 +2,7 @@
  This file implements an IO reader of Package files.
 */
 
+use super::package::EntryType;
 use super::{error::PackageError, package::Package, parser};
 
 use std::collections::HashSet;
@@ -39,10 +40,14 @@ impl PackageClient {
     }
 
     let content = fs::read_to_string(path)?;
-    parser::parse_entries(&content)
+    parser::parse_entries_as_binary(&content) // XXX
   }
 }
 
-pub fn to_packages(content: &str) -> Result<HashSet<Package>, PackageError> {
-  parser::parse_entries(content)
+pub fn to_packages(content: &str, entry_type: EntryType) -> Result<HashSet<Package>, PackageError> {
+  match entry_type {
+    EntryType::BINARY => parser::parse_entries_as_binary(content),
+    EntryType::SOURCE => parser::parse_entries_as_source(content),
+    EntryType::STATUS => parser::parse_entries_as_status(content),
+  }
 }

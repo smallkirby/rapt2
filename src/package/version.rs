@@ -4,7 +4,7 @@
 
 use crate::util::*;
 
-use std::cmp;
+use std::{cmp, ops::Deref};
 
 static NON_ALPHA_BIAS: u8 = 0x7F;
 static EMPTY_PSEUDO_ASCII_CODE: u8 = 0x1;
@@ -25,7 +25,7 @@ static CHILDA_PSEUDO_ASCII_CODE: u8 = 0x0;
      Regarded as smaller than minimum number if this field doesn't exist.
 */
 
-#[derive(Debug, PartialEq, Hash, Eq)]
+#[derive(Debug, PartialEq, Hash, Eq, Clone)]
 pub struct Version {
   epoch: u64, // XXX not sure it is used when ordering and comparision.
   upstream_version: String,
@@ -53,6 +53,13 @@ impl Version {
         debian_revision: String::new(),
       }),
     }
+  }
+
+  pub fn to_string(&self) -> String {
+    format!(
+      "{}:{}-{}",
+      self.epoch, self.upstream_version, self.debian_revision
+    )
   }
 }
 

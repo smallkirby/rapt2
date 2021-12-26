@@ -29,9 +29,10 @@ impl DpkgClient {
     }
   }
 
-  // get packages which are:
+  // Get packages which are:
   //    - installed but but have older version
   //    - not installed
+  // Returned `package` is old one.
   pub fn get_obsolute_packages(
     &self,
     packages: &HashSet<Package>,
@@ -66,6 +67,7 @@ impl DpkgClient {
         results.push(PackageStatus {
           package,
           status: StatusComp::OLD,
+          new_version: Some(candidate_new.version.clone()),
         });
       }
     }
@@ -176,8 +178,9 @@ pub enum StatusComp {
 
 #[derive(Debug)]
 pub struct PackageStatus {
-  package: Package,
-  status: StatusComp,
+  pub package: Package,
+  pub status: StatusComp,
+  pub new_version: Option<super::version::Version>,
 }
 
 #[cfg(test)]

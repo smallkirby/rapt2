@@ -5,4 +5,11 @@ update:
 		--list-dir "./rapt2/lists" \
 		update
 
-.PHONY: update
+update-deb:
+	cargo run -- \
+		--dpkg-dir "./rapt2/" \
+		--source-dir "./tests/resources/sources" \
+		--list-dir "./rapt2/lists" \
+		update
+
+.PHONY: update update-deb

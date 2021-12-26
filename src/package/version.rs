@@ -25,7 +25,7 @@ static CHILDA_PSEUDO_ASCII_CODE: u8 = 0x0;
      Regarded as smaller than minimum number if this field doesn't exist.
 */
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Hash, Eq)]
 pub struct Version {
   epoch: u64, // XXX not sure it is used when ordering and comparision.
   upstream_version: String,
@@ -52,6 +52,16 @@ impl Version {
         upstream_version: s.into(),
         debian_revision: String::new(),
       }),
+    }
+  }
+}
+
+impl Default for Version {
+  fn default() -> Self {
+    Self {
+      epoch: 0,
+      upstream_version: "".into(),
+      debian_revision: "".into(),
     }
   }
 }

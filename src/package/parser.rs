@@ -5,7 +5,7 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use super::{error::PackageError, package::*};
+use super::{error::PackageError, package::*, version::Version};
 use crate::util::*;
 
 fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageError> {
@@ -55,7 +55,7 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
 
     match section.to_lowercase().as_str() {
       "package" => package.name = ent,
-      "version" => package.version = ent,
+      "version" => package.version = Version::from(&ent).unwrap(),
       "architecture" => package.arch = ent,
       "priority" => package.priority = Some(Priority::from_str(&ent).unwrap()),
       "section" => package.section = Some(ent),
@@ -160,7 +160,7 @@ mod tests {
     let answer = Package {
       name: "vim".into(),
       arch: "amd64".into(),
-      version: "2:8.1.2269-1ubuntu5".into(),
+      version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
       priority: Some(Priority::OPTIONAL),
       section: Some("editors".into()),
       maintainer: "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>".into(),

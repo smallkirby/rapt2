@@ -1,6 +1,9 @@
 extern crate rapt2;
 
-use rapt2::{package::package::*, source::source::*};
+use rapt2::{
+  package::{package::*, version::Version},
+  source::source::*,
+};
 
 use std::collections::HashSet;
 
@@ -59,7 +62,7 @@ pub fn package_list_test1() -> HashSet<Package> {
     Package {
       name: "vim".into(),
       arch: "amd64".into(),
-      version: "2:8.1.2269-1ubuntu5".into(),
+      version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
       priority: Some(Priority::OPTIONAL),
       section: Some("editors".into()),
       maintainer: "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>".into(),
@@ -74,7 +77,7 @@ pub fn package_list_test1() -> HashSet<Package> {
     Package {
       name: "gcc".into(),
       arch: "amd64".into(),
-      version: "4:9.3.0-1ubuntu2".into(),
+      version: Version::from("4:9.3.0-1ubuntu2").unwrap(),
       priority: Some(Priority::OPTIONAL),
       section: Some("devel".into()),
       maintainer: "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>".into(),

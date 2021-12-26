@@ -1,14 +1,16 @@
-use std::str::FromStr;
-
 /*
  This file defines structure of Package file of a repository.
 */
+
+use super::version::Version;
+
+use std::str::FromStr;
 
 #[derive(Debug, Default, PartialEq, Eq, Hash)]
 pub struct Package {
   // shared?
   pub name: String,
-  pub version: String,
+  pub version: Version,
   pub priority: Option<Priority>,
   pub arch: String,
   pub section: Option<String>,
@@ -46,7 +48,7 @@ pub enum EntryType {
 #[derive(Debug, Default)]
 pub struct PackageVersion {
   pub package: String,
-  pub version: String,
+  pub version: Version,
 }
 
 #[derive(Debug, PartialEq, Eq, Hash)]

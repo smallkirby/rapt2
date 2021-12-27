@@ -25,4 +25,7 @@ pub enum PackageError {
     "Package entry lacks information for constructing package information: {msg:?} as {typ:?}"
   )]
   IncompleteEntry { msg: String, typ: EntryType },
+
+  #[error("invalid package name is specified: {name:?}")]
+  InvalidPackageName { name: String },
 }

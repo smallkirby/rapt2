@@ -128,9 +128,7 @@ mod tests {
   #[test]
   fn test_dpkg_get_obsolute_packages() {
     let package_client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
-    let packages = package_client
-      .read_single_file("test2_InRelease.list")
-      .unwrap();
+    let packages = package_client.read_single_file("test2_Packages").unwrap();
     let dpkg_client = DpkgClient::new(PathBuf::from("./tests/resources/dpkg"));
     let obsolute_packages = dpkg_client.get_obsolute_packages(&packages).unwrap();
     assert_eq!(obsolute_packages.len(), 1);

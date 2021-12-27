@@ -56,7 +56,7 @@ pub fn sources_list_fuga() -> HashSet<Source> {
   )
 }
 
-// Package contents in `tests/resources/lists/cache/test1_InRelease.list`.
+// Package contents in `tests/resources/lists/cache/test1_Packages`.
 pub fn package_list_test1() -> HashSet<Package> {
   vec![
     Package {

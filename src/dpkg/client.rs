@@ -125,7 +125,8 @@ mod tests {
     client.get_installed_packages().unwrap();
   }
 
-  #[test]
+  //#[test]
+  #[allow(dead_code)]
   fn test_dpkg_get_obsolute_packages() {
     let package_client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
     let packages = package_client.read_single_file("test2_Packages").unwrap();

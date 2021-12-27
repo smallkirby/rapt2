@@ -3,7 +3,7 @@
 */
 
 use super::version::*;
-use crate::dpkg;
+use crate::dpkg::status::DpkgStatusArea;
 
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -31,7 +31,7 @@ pub struct Package {
 
   // status information only
   pub conffiles: Vec<String>,
-  pub status: Option<dpkg::client::DpkgStatusArea>,
+  pub status: Option<DpkgStatusArea>,
 }
 
 impl PartialEq for Package {

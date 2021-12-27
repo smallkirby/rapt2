@@ -16,4 +16,7 @@ pub enum RaptError {
 
   #[error("Package related error")]
   RaptPackageError(#[from] PackageError),
+
+  #[error("Permission related error.")]
+  PermissionDenied,
 }

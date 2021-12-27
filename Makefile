@@ -3,7 +3,8 @@ DOCKER_CONTAINER_NAME="rapt2-tmp"
 
 # do `rapt2 update` using actual dpkg status.
 update:
-	cargo run -- \
+	cargo build
+	sudo ./target/debug/rapt2 \
 		--dpkg-dir "/var/lib/dpkg" \
 		--source-dir "./tests/resources/sources" \
 		--list-dir "./rapt2/lists" \
@@ -11,7 +12,8 @@ update:
 
 # do `rapt2 update` using self-customized dpkg status.
 update-deb:
-	cargo run -- \
+	cargo build
+	sudo ./target/debug/rapt2 \
 		--dpkg-dir "./rapt2/" \
 		--source-dir "./tests/resources/sources" \
 		--list-dir "./rapt2/lists" \

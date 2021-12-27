@@ -14,6 +14,7 @@ pub struct Context {
   pub list_dir: PathBuf,   // package list dir
   pub source_dir: PathBuf, // source list dir
   pub dpkg_dir: PathBuf,   // dpkg base dir
+  pub lists_lock: PathBuf, // list cache lock
 }
 
 impl Default for Context {
@@ -25,11 +26,14 @@ impl Default for Context {
 
     let dpkg_dir = PathBuf::from("/var/lib/dpkg");
 
+    let lists_lock = PathBuf::from("/var/lib/apt/lists/lock"); // share with apt
+
     Context {
       rapt_dir,
       list_dir,
       source_dir,
       dpkg_dir,
+      lists_lock,
     }
   }
 }
@@ -86,6 +90,7 @@ impl Args {
       list_dir,
       source_dir,
       dpkg_dir,
+      ..Default::default()
     }
   }
 }

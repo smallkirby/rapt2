@@ -2,9 +2,6 @@
  This file implements `update` subcommand.
 */
 
-use console::{style, Emoji};
-use indicatif::{ProgressBar, ProgressStyle};
-
 use super::super::error::RaptError;
 use crate::{
   context::Context,
@@ -14,17 +11,27 @@ use crate::{
     client::SourceClient,
     source::{ArchivedType, Source},
   },
+  util::*,
 };
 
+use console::{style, Emoji};
+use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
+use std::fs::File;
+use std::thread;
+use std::time::Duration;
 
 static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
 static EMOJI_BOOKMARK: Emoji<'_, '_> = Emoji("🔖", "");
 static EMOJI_GLASS: Emoji<'_, '_> = Emoji("🔍", "");
 static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
 static EMOJI_EXC: Emoji<'_, '_> = Emoji("❗", "");
+static EMOJI_LOCK: Emoji<'_, '_> = Emoji("🔐", "");
 
 pub fn execute(context: &Context) -> Result<(), RaptError> {
+  // acquire lock
+  let lock = acquire_lock_blocking(context)?;
+
   // get list of sources
   println!(
     "{} {} Reading source lists...",
@@ -61,6 +68,9 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
     progress.inc(1);
   }
   progress.abandon_with_message("Complete");
+
+  // release lock
+  drop(lock);
 
   // check if there are upgradable pacakges
   println!(
@@ -100,4 +110,27 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
   }
 
   Ok(())
+}
+
+fn acquire_lock_blocking(context: &Context) -> Result<File, RaptError> {
+  match try_lock_file(context.lists_lock.clone(), true) {
+    Ok(file) => Ok(file),
+    Err(err) => match err {
+      FileLockError::LockAcquireFailed => {
+        let pb = create_long_spinner(format!("{} Waiting lock is acquired ", EMOJI_LOCK));
+        let mut result = try_lock_file(context.lists_lock.clone(), true);
+        while result.is_err() {
+          result = try_lock_file(context.lists_lock.clone(), true);
+          thread::sleep(Duration::from_millis(1));
+        }
+        pb.finish_with_message("DONE");
+        Ok(result.unwrap())
+      }
+      FileLockError::FileOperationError { operation } => {
+        eprintln!("Operation failed: {}", operation);
+        return Err(RaptError::PermissionDenied);
+      }
+      err => unimplemented!("{}", err),
+    },
+  }
 }

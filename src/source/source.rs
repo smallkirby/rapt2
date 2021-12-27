@@ -33,15 +33,14 @@ pub enum Component {
   MULTIVERSE, // (might) not free
 }
 
-impl Component {
-  pub fn to_string(&self) -> String {
+impl std::fmt::Display for Component {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
-      Self::MAIN => "main",
-      Self::RESTRICTED => "restricted",
-      Self::UNIVERSE => "universe",
-      Self::MULTIVERSE => "multiverse",
+      Self::MAIN => write!(f, "main"),
+      Self::RESTRICTED => write!(f, "restricted"),
+      Self::UNIVERSE => write!(f, "universe"),
+      Self::MULTIVERSE => write!(f, "multiverse"),
     }
-    .into()
   }
 }
 
@@ -88,7 +87,7 @@ impl Source {
 
   pub fn packages_url(&self) -> String {
     let mut url = self.url.as_str();
-    if url.ends_with("/") {
+    if url.ends_with('/') {
       let mut tmp = url.chars();
       tmp.next_back().unwrap();
       url = tmp.as_str();

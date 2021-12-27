@@ -18,7 +18,7 @@ impl Rapt {
 
   pub fn execute(&self) {
     let result = match &self.command {
-      SubCommand::UPDATE { args } => update::execute(&self.context),
+      SubCommand::UPDATE { args: _ } => update::execute(&self.context),
       _ => unimplemented!(),
     };
 

@@ -52,7 +52,7 @@ impl DpkgClient {
       .into_iter()
       .filter(|package| {
         if let Some(status) = &package.status {
-          status.status == DpkgStatusStatus::INSTALLED
+          status.status == DpkgStatusStatus::Installed
         } else {
           false
         }

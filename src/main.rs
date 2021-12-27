@@ -1,5 +1,5 @@
 use rapt2::command::rapt::Rapt;
-use rapt2::context::{Args, Context};
+use rapt2::context::Args;
 
 use clap::Parser;
 

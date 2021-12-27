@@ -16,11 +16,7 @@ pub struct SourceClient {
 impl SourceClient {
   pub fn new(source_dir: PathBuf) -> Result<Self, SourceError> {
     let path = Path::new(&source_dir);
-    if !path.exists() && fs::create_dir(path).is_err() {
-      Err(SourceError::FileNotFound {
-        target: path.to_string_lossy().to_string(),
-      })
-    } else if !path.is_dir() {
+    if (!path.exists() && fs::create_dir(path).is_err()) || !path.is_dir() {
       Err(SourceError::FileNotFound {
         target: path.to_string_lossy().to_string(),
       })
@@ -71,12 +67,10 @@ impl SourceClient {
     let sources_list_d_path = self.source_dir.join("sources.list.d");
     if sources_list_d_path.as_path().is_dir() {
       let candidates = fs::read_dir(sources_list_d_path).unwrap();
-      for candidate in candidates {
-        if let Ok(ent) = candidate {
-          let path = ent.path();
-          if path.is_file() && path.extension().is_some() && path.extension().unwrap() == "list" {
-            target_pathes.push(path);
-          }
+      for ent in candidates.flatten() {
+        let path = ent.path();
+        if path.is_file() && path.extension().is_some() && path.extension().unwrap() == "list" {
+          target_pathes.push(path);
         }
       }
     }

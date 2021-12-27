@@ -67,7 +67,7 @@ impl Package {
   pub fn extend(a: &mut HashSet<Self>, b: HashSet<Self>) {
     let mut removal_targets = vec![];
     for a_ent in a.iter() {
-      if let Some(b_ent) = b.get(&a_ent) {
+      if let Some(b_ent) = b.get(a_ent) {
         if a_ent.version < b_ent.version {
           removal_targets.push(a_ent.clone());
         }
@@ -100,6 +100,7 @@ pub struct DependsAnyOf {
 }
 
 impl DependsAnyOf {
+  #[allow(clippy::result_unit_err)]
   pub fn from(s: &str) -> Result<Vec<Self>, ()> {
     let mut results: Vec<Self> = vec![];
     let parts: Vec<&str> = s.trim().split(", ").collect();
@@ -109,7 +110,7 @@ impl DependsAnyOf {
       let mut any_of = vec![];
 
       for or_part in or_parts {
-        match or_part.find("(") {
+        match or_part.find('(') {
           // eg: "libc6 (> 2.14)"
           Some(ix) => {
             let package_name = &or_part[0..ix - 1]; // eg: "libc6"

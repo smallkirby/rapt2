@@ -16,12 +16,10 @@ pub struct PackageDownloader {
 impl PackageDownloader {
   pub fn new(source: Source, cache_dir: PathBuf) -> Result<Self, DownloadError> {
     // check existence of cache dir
-    if !cache_dir.as_path().is_dir() {
-      if std::fs::create_dir(&cache_dir).is_err() {
-        return Err(DownloadError::FileNotFound {
-          name: cache_dir.to_string_lossy().to_string(),
-        });
-      };
+    if !cache_dir.as_path().is_dir() && std::fs::create_dir(&cache_dir).is_err() {
+      return Err(DownloadError::FileNotFound {
+        name: cache_dir.to_string_lossy().to_string(),
+      });
     }
 
     // construct HTTP client

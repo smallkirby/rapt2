@@ -11,7 +11,7 @@ pub struct DpkgStatusArea {
 
 impl DpkgStatusArea {
   pub fn from(s: &str) -> Self {
-    let parts: Vec<&str> = s.split(" ").collect();
+    let parts: Vec<&str> = s.split(' ').collect();
     if parts.len() != 3 {
       panic!("invalid status area: {}", s);
     }
@@ -38,59 +38,61 @@ impl DpkgStatusWant {
       "hold" => Self::HOLD,
       "deinstall" => Self::DEINSTALL,
       "purge" => Self::PURGE,
-      "unknown" | _ => Self::UNKNOWN,
+      "unknown" => Self::UNKNOWN,
+      _ => Self::UNKNOWN,
     }
   }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DpkgStatusFlag {
-  REINSTREQ,
-  HOLD,
-  HOLD_REINSTREQ,
-  OK,
-  UNKNOWN,
+  ReinstReq,
+  Hold,
+  HoldReinstReq,
+  Ok,
+  Unknown,
 }
 
 impl DpkgStatusFlag {
   pub fn from(s: &str) -> Self {
     match s {
-      "reinstreq" => Self::REINSTREQ,
-      "hold" => Self::HOLD,
-      "ok" => Self::OK,
-      "hold-reinstreq" => Self::HOLD_REINSTREQ,
-      "unknown" | _ => Self::UNKNOWN,
+      "reinstreq" => Self::ReinstReq,
+      "hold" => Self::Hold,
+      "ok" => Self::Ok,
+      "hold-reinstreq" => Self::HoldReinstReq,
+      "unknown" => Self::Unknown,
+      _ => Self::Unknown,
     }
   }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
 pub enum DpkgStatusStatus {
-  INSTALLED,
-  NOTINSTALLED,
-  UNPACKED,
-  HALFCONFIGURED,
-  HALFINSTALLED,
-  CONFIGFILES,
-  POST_INST_FAILED,
-  REMOVAL_FAILED,
-  REMOVED,
-  UNKNOWN,
+  Installed,
+  NotInstalled,
+  Unpacked,
+  HalfConfigured,
+  HalfInstalled,
+  ConfigFiles,
+  PostInstFailed,
+  RemovalFailed,
+  Removed,
+  Unknown,
 }
 
 impl DpkgStatusStatus {
   pub fn from(s: &str) -> Self {
     match s {
-      "installed" => Self::INSTALLED,
-      "not-installed" => Self::NOTINSTALLED,
-      "unpacked" => Self::UNPACKED,
-      "half-configured" => Self::HALFCONFIGURED,
-      "half-installed" => Self::HALFINSTALLED,
-      "config-files" => Self::CONFIGFILES,
-      "post-inst-failed" => Self::POST_INST_FAILED,
-      "removal-failed" => Self::REMOVAL_FAILED,
-      "removed" => Self::REMOVED,
-      _ => Self::UNKNOWN,
+      "installed" => Self::Installed,
+      "not-installed" => Self::NotInstalled,
+      "unpacked" => Self::Unpacked,
+      "half-configured" => Self::HalfConfigured,
+      "half-installed" => Self::HalfInstalled,
+      "config-files" => Self::ConfigFiles,
+      "post-inst-failed" => Self::PostInstFailed,
+      "removal-failed" => Self::RemovalFailed,
+      "removed" => Self::Removed,
+      _ => Self::Unknown,
     }
   }
 }

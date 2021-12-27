@@ -8,13 +8,13 @@ use std::collections::HashSet;
 use std::str::FromStr;
 
 fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
-  assert!(!line.contains("\n"));
+  assert!(!line.contains('\n'));
 
   // remove comments
   let comment_position = line
     .trim()
     .split_whitespace()
-    .position(|part| part.starts_with("#"));
+    .position(|part| part.starts_with('#'));
   let mut parts: Vec<&str> = line.trim().split_whitespace().collect();
   if let Some(ix) = comment_position {
     if ix == 0 {
@@ -22,7 +22,7 @@ fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
     };
     parts = parts[0..ix].to_vec();
   }
-  if parts.len() == 0 {
+  if parts.is_empty() {
     return Ok(HashSet::new());
   } else if parts.len() < 4 {
     return Err(SourceError::InvalidFormat { msg: line.into() });

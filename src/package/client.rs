@@ -16,11 +16,7 @@ pub struct PackageClient {
 impl PackageClient {
   pub fn new(cache_dir: PathBuf) -> Result<Self, PackageError> {
     let path = Path::new(&cache_dir);
-    if !path.exists() {
-      Err(PackageError::FileNotFound {
-        target: path.to_string_lossy().to_string(),
-      })
-    } else if !path.is_dir() {
+    if !path.exists() || !path.is_dir() {
       Err(PackageError::FileNotFound {
         target: path.to_string_lossy().to_string(),
       })
@@ -40,6 +36,7 @@ impl PackageClient {
     }
 
     let content = fs::read_to_string(path)?;
+    println!("{}", content);
     parser::parse_entries_as_binary(&content) // XXX
   }
 }

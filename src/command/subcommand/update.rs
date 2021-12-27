@@ -83,7 +83,7 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
   let obsolute_packages = dpkg_client.get_obsolute_packages(&total_packages)?;
 
   // show result
-  if obsolute_packages.len() == 0 {
+  if obsolute_packages.is_empty() {
     println!(
       "{} {}",
       EMOJI_SPARKLES,
@@ -129,7 +129,7 @@ fn acquire_lock_blocking(context: &Context) -> Result<File, RaptError> {
       }
       FileLockError::FileOperationError { operation } => {
         eprintln!("Operation failed: {}", operation);
-        return Err(RaptError::PermissionDenied);
+        Err(RaptError::PermissionDenied)
       }
       err => unimplemented!("{}", err),
     },

@@ -33,9 +33,10 @@ pub struct Version {
 }
 
 impl Version {
+  #[allow(clippy::result_unit_err)]
   pub fn from(s: &str) -> Result<Self, ()> {
-    match s.rfind("-") {
-      Some(last_hyphen) => match s.find(":") {
+    match s.rfind('-') {
+      Some(last_hyphen) => match s.find(':') {
         Some(colon_ix) => Ok(Self {
           epoch: s[0..colon_ix].to_string().parse().unwrap(),
           upstream_version: s[colon_ix + 1..last_hyphen].into(),
@@ -54,9 +55,12 @@ impl Version {
       }),
     }
   }
+}
 
-  pub fn to_string(&self) -> String {
-    format!(
+impl std::fmt::Display for Version {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(
+      f,
       "{}:{}-{}",
       self.epoch, self.upstream_version, self.debian_revision
     )
@@ -89,28 +93,28 @@ impl PartialOrd for Version {
 fn compare_version(s1: &str, s2: &str) -> cmp::Ordering {
   let mut s1 = s1;
   let mut s2 = s2;
-  while s1.len() != 0 || s2.len() != 0 {
+  while !s1.is_empty() || !s2.is_empty() {
     // check alphabetic (plus symbols) string
-    let s1_str = match first_numeric(&s1) {
+    let s1_str = match first_numeric(s1) {
       Some(ix) => {
         let ret = &s1[0..ix];
         s1 = &s1[ix..];
         ret
       }
       None => {
-        let ret = &s1[..];
+        let ret = s1;
         s1 = "";
         ret
       }
     };
-    let s2_str = match first_numeric(&s2) {
+    let s2_str = match first_numeric(s2) {
       Some(ix) => {
         let ret = &s2[0..ix];
         s2 = &s2[ix..];
         ret
       }
       None => {
-        let ret = &s2[..];
+        let ret = s2;
         s2 = "";
         ret
       }
@@ -121,26 +125,26 @@ fn compare_version(s1: &str, s2: &str) -> cmp::Ordering {
     };
 
     // compare numeric string
-    let s1_str = match first_non_numeric(&s1) {
+    let s1_str = match first_non_numeric(s1) {
       Some(ix) => {
         let ret = &s1[0..ix];
         s1 = &s1[ix..];
         ret
       }
       None => {
-        let ret = &s1[..];
+        let ret = s1;
         s1 = "";
         ret
       }
     };
-    let s2_str = match first_non_numeric(&s2) {
+    let s2_str = match first_non_numeric(s2) {
       Some(ix) => {
         let ret = &s2[0..ix];
         s2 = &s2[ix..];
         ret
       }
       None => {
-        let ret = &s2[..];
+        let ret = s2;
         s2 = "";
         ret
       }
@@ -161,8 +165,9 @@ pub struct VersionComp {
 }
 
 impl VersionComp {
+  #[allow(clippy::result_unit_err)]
   pub fn from(s: &str) -> Result<Self, ()> {
-    match s.find(" ") {
+    match s.find(' ') {
       Some(ix) => {
         let ope_str = &s[0..ix];
         let version_str = &s[ix + 1..];
@@ -255,12 +260,12 @@ fn compare_version_alphasymbols(s1: &str, s2: &str) -> cmp::Ordering {
 }
 
 fn compare_version_number(s1: &str, s2: &str) -> cmp::Ordering {
-  let n1: u32 = if s1.len() == 0 {
+  let n1: u32 = if s1.is_empty() {
     0
   } else {
     s1.parse().unwrap()
   };
-  let n2: u32 = if s2.len() == 0 {
+  let n2: u32 = if s2.is_empty() {
     0
   } else {
     s2.parse().unwrap()

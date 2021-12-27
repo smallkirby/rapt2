@@ -27,17 +27,17 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
   let mut conffiles = vec![];
   for line in content.lines() {
     if parsing_unknown {
-      if line.starts_with(" ") {
+      if line.starts_with(' ') {
         continue;
       }
       parsing_unknown = false;
     }
     if parsing_description {
-      if line.starts_with(" ") {
-        long_description = long_description + line;
+      if line.starts_with(' ') {
+        long_description += line;
         continue;
       }
-      package.long_description = if long_description.len() != 0 {
+      package.long_description = if !long_description.is_empty() {
         Some(long_description.clone())
       } else {
         None
@@ -45,7 +45,7 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
       parsing_description = false;
     }
     if parsing_conffile {
-      if line.starts_with(" ") {
+      if line.starts_with(' ') {
         conffiles.push(line.trim().to_string());
         continue;
       }

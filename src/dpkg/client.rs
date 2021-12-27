@@ -2,7 +2,7 @@
  This file defines operations relating to dpkg.
 */
 
-use super::{error::PackageError, package::*, parser};
+use crate::package::{error::PackageError, package::*, parser, version};
 
 use std::collections::HashSet;
 use std::fs;
@@ -180,13 +180,13 @@ pub enum StatusComp {
 pub struct PackageStatus {
   pub package: Package,
   pub status: StatusComp,
-  pub new_version: Option<super::version::Version>,
+  pub new_version: Option<version::Version>,
 }
 
 #[cfg(test)]
 mod tests {
-  use super::super::client::PackageClient;
   use super::*;
+  use crate::package::client::PackageClient;
 
   #[test]
   fn test_dpkg_status_is_readable() {

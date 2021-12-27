@@ -5,8 +5,9 @@
 use super::super::error::RaptError;
 use crate::{
   context::Context,
+  dpkg,
   net::package::PackageDownloader,
-  package::{client::*, dpkg, package::*},
+  package::{client::*, package::*},
   source::{
     client::SourceClient,
     source::{ArchivedType, Source},
@@ -78,7 +79,7 @@ pub fn execute(context: &Context) -> Result<(), RaptError> {
     style("[3/3]").bold().dim(),
     EMOJI_GLASS,
   );
-  let dpkg_client = dpkg::DpkgClient::new(context.dpkg_dir.clone());
+  let dpkg_client = dpkg::client::DpkgClient::new(context.dpkg_dir.clone());
   let obsolute_packages = dpkg_client.get_obsolute_packages(&total_packages)?;
 
   // show result

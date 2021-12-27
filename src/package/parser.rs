@@ -5,7 +5,8 @@
 use std::collections::HashSet;
 use std::str::FromStr;
 
-use super::{dpkg, error::PackageError, package::*, version::*};
+use super::{error::PackageError, package::*, version::*};
+use crate::dpkg;
 use crate::util::*;
 
 fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageError> {
@@ -90,7 +91,7 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
         parsing_conffile = true;
       }
       "depends" => package.depends = DependsAnyOf::from(&ent).unwrap(),
-      "status" => package.status = Some(dpkg::DpkgStatusArea::from(&ent)),
+      "status" => package.status = Some(dpkg::client::DpkgStatusArea::from(&ent)),
       "files" | "checksums-sha1" | "checksums-sha256" | "package-list" => parsing_unknown = true,
       _ => continue,
     }

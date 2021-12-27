@@ -2,7 +2,8 @@
  This file defines structure of Package file of a repository.
 */
 
-use super::{dpkg, version::*};
+use super::version::*;
+use crate::dpkg;
 
 use std::collections::HashSet;
 use std::hash::Hash;
@@ -30,7 +31,7 @@ pub struct Package {
 
   // status information only
   pub conffiles: Vec<String>,
-  pub status: Option<dpkg::DpkgStatusArea>,
+  pub status: Option<dpkg::client::DpkgStatusArea>,
 }
 
 impl PartialEq for Package {

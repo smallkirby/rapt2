@@ -36,7 +36,6 @@ impl PackageClient {
     }
 
     let content = fs::read_to_string(path)?;
-    println!("{}", content);
     parser::parse_entries_as_binary(&content) // XXX
   }
 }

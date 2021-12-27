@@ -1,3 +1,4 @@
+pub mod apt;
 pub mod command;
 pub mod context;
 pub mod dpkg;

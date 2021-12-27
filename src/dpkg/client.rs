@@ -3,6 +3,7 @@
 */
 
 use super::status::*;
+use crate::apt::extended_states;
 use crate::package::{error::PackageError, package::*, parser, version};
 
 use std::collections::HashSet;
@@ -39,15 +40,20 @@ impl DpkgClient {
     packages: &HashSet<Package>,
   ) -> Result<Vec<PackageStatus>, PackageError> {
     let installed_packages = self.get_installed_packages()?;
-    self.get_obsolute_packages_internal(packages, installed_packages)
+    let extended_info_client = extended_states::AptExtendedStates::new();
+    let extended_info = extended_info_client.get()?;
+    self.get_obsolute_packages_internal(packages, installed_packages, extended_info)
   }
 
   fn get_obsolute_packages_internal(
     &self,
     news: &HashSet<Package>,
     installeds: HashSet<Package>,
+    extended_info: Vec<extended_states::AptExtendedPackageInfo>,
   ) -> Result<Vec<PackageStatus>, PackageError> {
     let mut results = vec![];
+
+    // get only installed state packages.
     let installeds: HashSet<Package> = installeds
       .into_iter()
       .filter(|package| {
@@ -59,6 +65,7 @@ impl DpkgClient {
       })
       .collect();
 
+    // check its status by `/var/lib/dpkg/status`.
     for package in installeds {
       let candidate_new = match news.get(&package) {
         Some(candidate) => candidate,
@@ -72,6 +79,20 @@ impl DpkgClient {
         });
       }
     }
+
+    // get only not automatically installed packages
+    let results: Vec<PackageStatus> = results
+      .into_iter()
+      .filter(|package_status| {
+        match extended_info
+          .iter()
+          .find(|ex| ex.name == package_status.package.name)
+        {
+          Some(info) => !info.automatic_installed,
+          None => true,
+        }
+      })
+      .collect();
 
     Ok(results)
   }

@@ -1,3 +1,4 @@
+pub mod algorithm;
 pub mod apt;
 pub mod command;
 pub mod context;

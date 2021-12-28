@@ -106,6 +106,9 @@ impl DependsAnyOf {
     let parts: Vec<&str> = s.trim().split(", ").collect();
 
     for part in parts {
+      if part.is_empty() {
+        continue;
+      }
       let or_parts: Vec<&str> = part.split(" | ").collect();
       let mut any_of = vec![];
 

@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand};
 
+pub mod list;
 pub mod update;
 
 #[derive(Debug, Subcommand)]
@@ -21,7 +22,21 @@ pub enum SubCommand {
   SEARCH,
   #[clap(about = "(not implemented)")]
   SHOW,
+  #[clap(about = "List packages by name.")]
+  LIST {
+    #[clap(flatten)]
+    args: ListArgs,
+  },
 }
 
 #[derive(Args, Debug)]
 pub struct UpdateArgs {}
+
+#[derive(Args, Debug)]
+pub struct ListArgs {
+  #[clap(long, help = "show only installed packages.")]
+  pub installed: bool,
+
+  #[clap(help = "Keyword to search for.")]
+  pub keyword: String,
+}

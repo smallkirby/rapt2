@@ -19,4 +19,7 @@ pub enum RaptError {
 
   #[error("Permission related error.")]
   PermissionDenied,
+
+  #[error("Invalid input: {msg:?}")]
+  InvalidInput { msg: String },
 }

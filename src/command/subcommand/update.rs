@@ -2,7 +2,7 @@
  This file implements `update` subcommand.
 */
 
-use super::super::error::RaptError;
+use super::{super::error::RaptError, UpdateArgs};
 use crate::{
   context::Context,
   dpkg,
@@ -29,7 +29,7 @@ static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
 static EMOJI_EXC: Emoji<'_, '_> = Emoji("❗", "");
 static EMOJI_LOCK: Emoji<'_, '_> = Emoji("🔐", "");
 
-pub fn execute(context: &Context) -> Result<(), RaptError> {
+pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   // acquire lock
   let lock = acquire_lock_blocking(context)?;
 

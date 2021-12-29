@@ -94,7 +94,7 @@ impl PackageClient {
   }
 
   // search packages from list DB by package name.
-  // globa pattern is supported for search.
+  // glob pattern is supported for search.
   pub fn search_by_name(&self, name: &str) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
     let pattern = match glob::Pattern::new(name) {

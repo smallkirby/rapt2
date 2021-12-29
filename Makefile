@@ -19,6 +19,13 @@ update-deb:
 		--list-dir "./rapt2/lists" \
 		update
 
+# do `rapt2 list`
+list:
+	cargo build
+	./target/debug/rapt2 \
+	--list-dir "/var/lib/apt/lists" \
+	list
+
 # construct a clea ndocker image and run container with pwd bind-mounted.
 docker:
 	cargo build

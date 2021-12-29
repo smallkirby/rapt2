@@ -28,4 +28,7 @@ pub enum PackageError {
 
   #[error("invalid package name is specified: {name:?}")]
   InvalidPackageName { name: String },
+
+  #[error("Package not found: {package_name:?}")]
+  PackageNotFound { package_name: String },
 }

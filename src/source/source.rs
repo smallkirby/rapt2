@@ -98,10 +98,17 @@ impl Source {
 
   pub fn packages_url(&self) -> String {
     let mut url = self.url.as_str();
+    let mut distro = self.distro.as_str();
+
     if url.ends_with('/') {
       let mut tmp = url.chars();
       tmp.next_back().unwrap();
       url = tmp.as_str();
+    }
+    if distro.ends_with('/') {
+      let mut tmp = distro.chars();
+      tmp.next_back().unwrap();
+      distro = tmp.as_str();
     }
     let type_str = match self.archive_type {
       ArchivedType::DEB => "binary-amd64",
@@ -112,12 +119,12 @@ impl Source {
       ArchivedType::DEBSRC => "Sources",
     };
     if self.component == Component::NULL {
-      format!("{}/{}/{}.gz", url, self.component.to_string(), filename,)
+      format!("{}/{}/{}.gz", url, distro, filename,)
     } else {
       format!(
         "{}/dists/{}/{}/{}/{}.gz",
         url,
-        self.distro,
+        distro,
         self.component.to_string(),
         type_str,
         filename,

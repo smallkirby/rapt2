@@ -3,11 +3,7 @@
 */
 
 use super::{super::error::RaptError, ListArgs};
-use crate::{
-  context::Context,
-  package::{client::PackageClient, package::Package},
-  source::client::SourceClient,
-};
+use crate::{context::Context, package::client::PackageClient, source::client::SourceClient};
 
 use console::{style, Emoji};
 use std::path::PathBuf;

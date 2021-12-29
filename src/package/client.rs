@@ -2,6 +2,12 @@
  This file implements an IO reader of Package files.
 */
 
+/*
+ NOTE: All methods of `PackageClient` must NOT read each package list files more than once.
+ XXX: Maybe, it should use lazy_static cache member to gurantee that one client reads
+     package list files only onece, upon each methods.
+*/
+
 use super::package::EntryType;
 use super::{error::PackageError, package::Package, parser};
 use crate::source::source::{ArchivedType, Source};
@@ -48,12 +54,10 @@ impl PackageClient {
     sources: &Vec<Source>,
   ) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
-    let base = self.cache_dir.as_path();
 
     for source in sources {
-      let filename = base.join(source.cache_filename());
       // ignore error cuz lists file contains unreadable files such as `lock`.
-      if let Ok(packages) = self.read_single_file(&filename.to_string_lossy().to_string()) {
+      if let Ok(packages) = self.read_single_file(&source.cache_filename()) {
         results.extend(packages);
       }
     }
@@ -116,12 +120,10 @@ impl PackageClient {
     sources: &Vec<Source>,
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
     let mut results: HashSet<PackageWithSource> = HashSet::new();
-    let base = self.cache_dir.as_path();
 
     for source in sources {
-      let filename = base.join(source.cache_filename());
       // ignore error cuz lists file contains unreadable files such as `lock`.
-      if let Ok(packages) = self.read_single_file(&filename.to_string_lossy().to_string()) {
+      if let Ok(packages) = self.read_single_file(&source.cache_filename()) {
         let packages_with_source: Vec<PackageWithSource> = packages
           .into_iter()
           .map(|package| PackageWithSource {
@@ -169,9 +171,74 @@ impl PackageClient {
         .collect(),
     )
   }
+
+  // Get target packages and all of its dependencies with Source information.
+  pub fn get_package_with_deps(
+    &self,
+    name: &str,
+    sources: &Vec<Source>,
+  ) -> Result<HashSet<PackageWithSource>, PackageError> {
+    let pattern = glob::Pattern::new(name).unwrap();
+    let packages_with_source = self.read_all_from_source_with_source(sources)?;
+
+    // first, find target package itself
+    let target_package_ws = match packages_with_source
+      .iter()
+      .find(|package_ws| pattern.matches(&package_ws.package.name))
+    {
+      Some(target) => target,
+      None => {
+        return Err(PackageError::PackageNotFound {
+          package_name: name.into(),
+        })
+      }
+    };
+
+    // next, find all its dependencies recursively
+    let mut deps: HashSet<PackageWithSource> = HashSet::new();
+    deps.insert(target_package_ws.clone());
+    self.get_dependency_recursive(target_package_ws, &packages_with_source, &mut deps)?;
+
+    Ok(deps)
+  }
+
+  fn get_dependency_recursive(
+    &self,
+    target: &PackageWithSource,
+    all_packages_ws: &HashSet<PackageWithSource>,
+    acc: &mut HashSet<PackageWithSource>,
+  ) -> Result<(), PackageError> {
+    for dep in &target.package.depends {
+      // XXX choose arbitrary dependencie
+      let dep = &dep.depends[0];
+      if acc.iter().any(|pws| pws.package.name == dep.package) {
+        continue;
+      }
+
+      let depended_on = match all_packages_ws
+        .into_iter()
+        .find(|pws| pws.package.name == dep.package)
+      {
+        Some(target) => target,
+        None => {
+          return Err(PackageError::PackageNotFound {
+            package_name: dep.package.to_string(),
+          })
+        }
+      };
+
+      // append depended-on package
+      acc.insert(depended_on.clone());
+
+      // more search recursively
+      self.get_dependency_recursive(depended_on, all_packages_ws, acc)?;
+    }
+
+    Ok(())
+  }
 }
 
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub struct PackageWithSource {
   pub package: Package,
   pub source: Source,

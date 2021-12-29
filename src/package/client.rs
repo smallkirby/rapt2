@@ -2,6 +2,8 @@
  This file implements an IO reader of Package files.
 */
 
+use crate::source::source::Source;
+
 use super::package::EntryType;
 use super::{error::PackageError, package::Package, parser};
 
@@ -42,6 +44,24 @@ impl PackageClient {
     parser::parse_entries_as_binary(&content) // XXX
   }
 
+  pub fn read_all_from_source(
+    &self,
+    sources: &Vec<Source>,
+  ) -> Result<HashSet<Package>, PackageError> {
+    let mut results = HashSet::new();
+    let base = self.cache_dir.as_path();
+
+    for source in sources {
+      let filename = base.join(source.cache_filename());
+      // ignore error cuz lists file contains unreadable files such as `lock`.
+      if let Ok(packages) = self.read_single_file(&filename.to_string_lossy().to_string()) {
+        results.extend(packages);
+      }
+    }
+
+    Ok(results)
+  }
+
   pub fn read_all(&self) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
     let base = self.cache_dir.as_path();
@@ -51,7 +71,12 @@ impl PackageClient {
         continue;
       }
       let path = target.path();
-      if path.extension().is_some() {
+      if !path
+        .as_path()
+        .to_string_lossy()
+        .to_string()
+        .ends_with("Packages")
+      {
         continue;
       }
 
@@ -59,8 +84,10 @@ impl PackageClient {
         Some(s) => s.to_string_lossy().to_string(),
         None => continue,
       };
-      let packages = self.read_single_file(&filename)?;
-      results.extend(packages);
+      // ignore error cuz lists file contains unreadable files such as `lock`.
+      if let Ok(packages) = self.read_single_file(&filename) {
+        results.extend(packages);
+      }
     }
 
     Ok(results)

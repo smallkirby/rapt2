@@ -31,6 +31,10 @@ pub enum Component {
   RESTRICTED, // proprietary
   UNIVERSE,   // free, open, but not guranteed
   MULTIVERSE, // (might) not free
+  PARTNER,    // Canonical partners
+  CONTRIB,    // DFSG-compliant, but have deps not in main.
+  STABLE,
+  NULL, // component is not given (refer to /docs/Source.md)
 }
 
 impl std::fmt::Display for Component {
@@ -40,6 +44,10 @@ impl std::fmt::Display for Component {
       Self::RESTRICTED => write!(f, "restricted"),
       Self::UNIVERSE => write!(f, "universe"),
       Self::MULTIVERSE => write!(f, "multiverse"),
+      Self::PARTNER => write!(f, "partner"),
+      Self::CONTRIB => write!(f, "contrib"),
+      Self::STABLE => write!(f, "stable"),
+      Self::NULL => write!(f, "(empty)"),
     }
   }
 }
@@ -53,7 +61,10 @@ impl FromStr for Component {
       "restricted" => Ok(Self::RESTRICTED),
       "universe" => Ok(Self::UNIVERSE),
       "multiverse" => Ok(Self::MULTIVERSE),
-      _ => Err(()),
+      "partner" => Ok(Self::PARTNER),
+      "contrib" => Ok(Self::CONTRIB),
+      "stable" => Ok(Self::STABLE),
+      _ => Ok(Self::NULL),
     }
   }
 }
@@ -100,14 +111,18 @@ impl Source {
       ArchivedType::DEB => "Packages",
       ArchivedType::DEBSRC => "Sources",
     };
-    format!(
-      "{}/dists/{}/{}/{}/{}.gz",
-      url,
-      self.distro,
-      self.component.to_string(),
-      type_str,
-      filename,
-    )
+    if self.component == Component::NULL {
+      format!("{}/{}/{}.gz", url, self.component.to_string(), filename,)
+    } else {
+      format!(
+        "{}/dists/{}/{}/{}/{}.gz",
+        url,
+        self.distro,
+        self.component.to_string(),
+        type_str,
+        filename,
+      )
+    }
   }
 
   pub fn cache_filename(&self) -> String {

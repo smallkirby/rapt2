@@ -4,11 +4,19 @@
 
 use super::{error::SourceError, source::Source, source::*};
 
+use lazy_static::lazy_static;
+use regex::Regex;
 use std::collections::HashSet;
 use std::str::FromStr;
 
 fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
   assert!(!line.contains('\n'));
+
+  // ignore architecture specifier: eg) [arch=amd64]
+  lazy_static! {
+    static ref RE: Regex = Regex::new(r"\[.*\]\s").unwrap();
+  }
+  let line = &RE.replace_all(line, "").to_string();
 
   // remove comments
   let comment_position = line
@@ -22,9 +30,11 @@ fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
     };
     parts = parts[0..ix].to_vec();
   }
+
   if parts.is_empty() {
     return Ok(HashSet::new());
-  } else if parts.len() < 4 {
+  } else if parts.len() < 3 {
+    // components are nullable
     return Err(SourceError::InvalidFormat { msg: line.into() });
   }
 
@@ -43,17 +53,21 @@ fn parse_line(line: &str) -> Result<HashSet<Source>, SourceError> {
   let distro: String = parts[2].into();
   let mut components = vec![];
 
-  for &component_str in &parts[3..] {
-    let component = match Component::from_str(component_str) {
-      Ok(c) => c,
-      Err(()) => {
-        return Err(SourceError::InvalidField {
-          field: "Component".into(),
-          value: component_str.into(),
-        })
-      }
-    };
-    components.push(component);
+  if parts.len() >= 4 {
+    for &component_str in &parts[3..] {
+      let component = match Component::from_str(component_str) {
+        Ok(c) => c,
+        Err(()) => {
+          return Err(SourceError::InvalidField {
+            field: "Component".into(),
+            value: component_str.into(),
+          })
+        }
+      };
+      components.push(component);
+    }
+  } else {
+    components.push(Component::NULL);
   }
 
   Ok(
@@ -112,7 +126,7 @@ mod tests {
     assert_eq!(answer, parsed);
 
     // check if invalid line can't be parsed
-    let line = "deb http://jp.archive.ubuntu.com/ubuntu/ focal # main restricted";
+    let line = "deb http://jp.archive.ubuntu.com/ubuntu/ # focal main restricted";
     let parsed = parse_line(line);
     assert_eq!(parsed.is_err(), true);
   }

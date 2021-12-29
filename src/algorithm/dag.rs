@@ -132,7 +132,6 @@ impl Graph {
   }
 }
 
-//fn construct_nodes<'a>(packages: Vec<Package>) -> (Arena<PackageNode<'a>>, Vec<&'a mut PackageNode<'a>>) {
 fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
   // initiate nodes
   let mut nodes: Vec<PackageNode> = packages

@@ -4,13 +4,11 @@
 
 use crate::command::subcommand::SubCommand as RaptSubCommand;
 use clap::Parser;
-use dirs::home_dir;
 
 use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Context {
-  pub rapt_dir: PathBuf,   // base dir of rapt2
   pub list_dir: PathBuf,   // package list dir
   pub source_dir: PathBuf, // source list dir
   pub dpkg_dir: PathBuf,   // dpkg base dir
@@ -19,17 +17,14 @@ pub struct Context {
 
 impl Default for Context {
   fn default() -> Self {
-    let home = home_dir().unwrap();
-    let rapt_dir = home.join("rapt2");
-    let list_dir = rapt_dir.join("lists");
-    let source_dir = rapt_dir.join("sources");
+    let list_dir = PathBuf::from("/var/lib/apt/lists.rapt2");
+    let source_dir = PathBuf::from("/etc/apt");
 
     let dpkg_dir = PathBuf::from("/var/lib/dpkg");
 
     let lists_lock = PathBuf::from("/var/lib/apt/lists/lock"); // share with apt
 
     Context {
-      rapt_dir,
       list_dir,
       source_dir,
       dpkg_dir,
@@ -59,38 +54,22 @@ pub struct Args {
 
 impl Args {
   pub fn to_context(&self) -> Context {
-    let home = home_dir().unwrap();
-
-    let rapt_dir = if self.rapt_dir.is_empty() {
-      home.join(".rapt2")
-    } else {
-      PathBuf::from(&self.rapt_dir)
-    };
-
-    let dpkg_dir = if self.dpkg_dir.is_empty() {
-      PathBuf::from("/var/lib/dpkg")
-    } else {
-      PathBuf::from(&self.dpkg_dir)
-    };
-
-    let list_dir = if self.list_dir.is_empty() {
-      rapt_dir.join("lists")
-    } else {
-      PathBuf::from(&self.list_dir)
-    };
-
-    let source_dir = if self.source_dir.is_empty() {
-      rapt_dir.join("sources")
-    } else {
-      PathBuf::from(&self.source_dir)
-    };
-
-    Context {
-      rapt_dir,
-      list_dir,
-      source_dir,
-      dpkg_dir,
+    let mut context = Context {
       ..Default::default()
-    }
+    };
+
+    if !self.dpkg_dir.is_empty() {
+      context.dpkg_dir = PathBuf::from(&self.dpkg_dir)
+    };
+
+    if !self.list_dir.is_empty() {
+      context.list_dir = PathBuf::from(&self.list_dir)
+    };
+
+    if !self.source_dir.is_empty() {
+      context.source_dir = PathBuf::from(&self.source_dir)
+    };
+
+    context
   }
 }

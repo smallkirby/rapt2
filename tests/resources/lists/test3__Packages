@@ -1,20 +1,6 @@
-Package: 0
-Version: 2:8.1.2269-1ubuntu5
-Depends: 1
-Size: 1
-Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
-Maintainer: a
-
 Package: 1
 Version: 2:8.1.2269-1ubuntu5
 Depends: 2
-Size: 1
-Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
-Maintainer: a
-
-Package: 2
-Version: 2:8.1.2269-1ubuntu5
-Depends: 3, 4
 Size: 1
 Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
 Maintainer: a
@@ -26,9 +12,9 @@ Size: 1
 Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
 Maintainer: a
 
-Package: 4
+Package: 0
 Version: 2:8.1.2269-1ubuntu5
-Depends: 5, 6
+Depends: 1
 Size: 1
 Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
 Maintainer: a
@@ -64,6 +50,20 @@ Maintainer: a
 Package: 9
 Version: 2:8.1.2269-1ubuntu5
 Depends: 8
+Size: 1
+Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
+Maintainer: a
+
+Package: 2
+Version: 2:8.1.2269-1ubuntu5
+Depends: 3, 4
+Size: 1
+Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
+Maintainer: a
+
+Package: 4
+Version: 2:8.1.2269-1ubuntu5
+Depends: 5, 6
 Size: 1
 Filename: pool/main/v/vim/vim_8.1.2269-1ubuntu5_amd64.deb
 Maintainer: a

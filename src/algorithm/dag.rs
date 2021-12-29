@@ -8,8 +8,30 @@
  Here, Graph uses index-managed node structures to avoid annoying lifetime managements.
 */
 
-use crate::package::package::*;
+/*
+ XXX
+ Now, this Graph supports only single depth cyclic depth.
+ In short, below condition is unsupported:
 
+   ┌─────────────┐
+   ▼             │
+   1 ───────► 2  │
+   ▲          │  │
+   │          │  │
+   │          │  │
+   │          │  │
+   │          ▼  │
+   4 ◄─────── 3 ─┘
+
+ Now, this would be converted to:
+
+   123 ◄──────────┐
+       └──────────► 4
+*/
+
+use crate::package::{client::PackageWithSource, package::*};
+
+use std::collections::HashSet;
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -30,10 +52,20 @@ struct PackageNode {
   pub visited: bool,
 }
 
+// Simple node used to re-construct graph based on the result of SCC.
+struct SimpleNode {
+  group: i64,
+  visited: bool,
+  to: Vec<i64>,
+}
+
 struct Graph {
   nodes: Vec<PackageNode>,
-  index: i64,     // total visited count
-  group_num: i64, // current group total count
+  index: i64,                  // total visited count
+  group_num: i64,              // current group total count
+  topological_order: Vec<i64>, // order of groups after topological sort
+  topological_count: i64,
+  simplified_nodes: Vec<SimpleNode>,
 }
 
 impl Graph {
@@ -121,7 +153,62 @@ impl Graph {
 
   // Topological Sort of cyclic dependencies using SCC
   fn topological_sort(&mut self) {
-    unimplemented!()
+    // initialize topological orders
+    self.topological_order = (0..self.group_num).into_iter().map(|_| -1).collect();
+    self.clear_visited();
+    self.topological_count = 0;
+
+    // construct simplified graph based on the result of SCC
+    self.construct_simple_graph();
+
+    // home-way indexed DFS
+    for ix in 0..self.simplified_nodes.len() {
+      if !self.simplified_nodes[ix].visited {
+        self.topological_dfs(ix);
+      }
+    }
+  }
+
+  // home-way indexed DFS for topological sort.
+  fn topological_dfs(&mut self, start: usize) {
+    if self.simplified_nodes[start].visited {
+      return;
+    }
+    self.simplified_nodes[start].visited = true;
+
+    for jx in 0..self.simplified_nodes[start].to.len() {
+      self.topological_dfs(jx);
+    }
+
+    self.topological_order[self.simplified_nodes[start].group as usize] = self.topological_count;
+    self.topological_count += 1;
+  }
+
+  fn construct_simple_graph(&mut self) {
+    let mut result = vec![];
+    for group_id in 0..self.group_num {
+      let nodes: Vec<&PackageNode> = self
+        .nodes
+        .iter()
+        .filter(|node| node.group == group_id)
+        .collect();
+      let mut simple_node = SimpleNode {
+        group: group_id,
+        to: vec![],
+        visited: false,
+      };
+      for node in nodes {
+        for to in &node.to {
+          let to_group = self.nodes[to.clone()].group;
+          if to_group != group_id && !simple_node.to.contains(&to_group) {
+            simple_node.to.push(to_group);
+          }
+        }
+      }
+      result.push(simple_node);
+    }
+
+    self.simplified_nodes = result;
   }
 
   #[allow(dead_code)]
@@ -181,7 +268,46 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
     nodes,
     index: 0,
     group_num: 0,
+    topological_order: vec![],
+    topological_count: 0,
+    simplified_nodes: vec![],
   })
+}
+
+pub fn sort_depends(deps: HashSet<PackageWithSource>) -> Vec<PackageWithSource> {
+  let packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
+  let mut graph = Graph::from(packages).unwrap();
+
+  // do SCC to make a DAG and do topological sort
+  graph.scc().unwrap();
+  graph.topological_sort();
+
+  let mut results = vec![];
+  let group_orders = graph.topological_order;
+  for group_order in 0..group_orders.len() {
+    let group_id = group_orders
+      .iter()
+      .position(|i| i.clone() == group_order as i64)
+      .unwrap();
+    let nodes: Vec<&PackageNode> = graph
+      .nodes
+      .iter()
+      .filter(|node| node.group == group_id as i64)
+      .collect();
+
+    // XXX In the same group, push nodes in arbitrary order
+    for node in nodes {
+      // combine with source information
+      let pws = deps
+        .iter()
+        .find(|pws| pws.package == node.package)
+        .unwrap()
+        .clone();
+      results.push(pws);
+    }
+  }
+
+  results
 }
 
 #[cfg(test)]
@@ -235,7 +361,6 @@ mod tests {
     let packages = vec2packages(vec![vec![1, 2, 3], vec![3], vec![], vec![]]);
     let mut graph = Graph::from(packages).unwrap();
     let order = vec![3, 1, 2, 0];
-    let rev_order = vec![0, 1, 2, 3];
 
     graph.dfs_all();
     assert_eq!(to_orders(&graph), order);
@@ -286,7 +411,10 @@ mod tests {
 
     graph.scc().unwrap();
     let groups = to_groups(&graph);
-
     assert_eq!(groups, answer_groups);
+
+    let topological_answer = vec![0, 1, 2, 3, 4, 5, 6];
+    graph.topological_sort();
+    assert_eq!(topological_answer, graph.topological_order);
   }
 }

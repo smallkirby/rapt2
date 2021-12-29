@@ -111,51 +111,63 @@ impl PackageClient {
     Ok(results)
   }
 
-  // search packages from list DB by package name.
-  // Returns found packages with Source info.
-  pub fn search_by_name_with_source(
+  pub fn read_all_from_source_with_source(
     &self,
-    name: &str,
     sources: &Vec<Source>,
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
-    let pattern = match glob::Pattern::new(name) {
-      Ok(pattern) => pattern,
-      Err(_) => return Err(PackageError::InvalidPackageName { name: name.into() }),
-    };
     let mut results: HashSet<PackageWithSource> = HashSet::new();
-    let sources: Vec<&Source> = sources
-      .iter()
-      .filter(|source| source.archive_type == ArchivedType::DEB)
-      .collect();
+    let base = self.cache_dir.as_path();
 
     for source in sources {
-      let packages = match self.read_single_file(&source.cache_filename()) {
-        Ok(packages) => packages,
-        // XXX ignore unreadable files
-        Err(_) => continue,
-      };
-      let target_packages: Vec<Package> = packages
-        .into_iter()
-        .filter(|package| pattern.matches(&package.name))
-        .collect();
-      for package in target_packages {
-        let package_with_source = PackageWithSource {
-          package,
-          source: source.clone(),
-        };
-        if results.contains(&package_with_source) {
-          // choose newer version
-          let existing = results.get(&package_with_source).unwrap();
-          if existing.package.version < package_with_source.package.version {
+      let filename = base.join(source.cache_filename());
+      // ignore error cuz lists file contains unreadable files such as `lock`.
+      if let Ok(packages) = self.read_single_file(&filename.to_string_lossy().to_string()) {
+        let packages_with_source: Vec<PackageWithSource> = packages
+          .into_iter()
+          .map(|package| PackageWithSource {
+            package,
+            source: source.clone(),
+          })
+          .collect();
+        for package_with_source in packages_with_source {
+          if results.contains(&package_with_source) {
+            let existing = results.get(&package_with_source).unwrap();
+            if existing.package.version < package_with_source.package.version {
+              results.insert(package_with_source);
+            }
+          } else {
             results.insert(package_with_source);
           }
-        } else {
-          results.insert(package_with_source);
         }
       }
     }
 
     Ok(results)
+  }
+
+  // search packages from list DB by package name.
+  // Returns found packages with Source info.
+  pub fn search_by_name_with_source(
+    &self,
+    name: &str,
+    sources: Vec<Source>,
+  ) -> Result<HashSet<PackageWithSource>, PackageError> {
+    let pattern = match glob::Pattern::new(name) {
+      Ok(pattern) => pattern,
+      Err(_) => return Err(PackageError::InvalidPackageName { name: name.into() }),
+    };
+    let sources: Vec<Source> = sources
+      .into_iter()
+      .filter(|source| source.archive_type == ArchivedType::DEB)
+      .collect();
+
+    let packages = self.read_all_from_source_with_source(&sources)?;
+    Ok(
+      packages
+        .into_iter()
+        .filter(|package_with_source| pattern.matches(&package_with_source.package.name))
+        .collect(),
+    )
   }
 }
 

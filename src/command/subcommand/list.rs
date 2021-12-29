@@ -26,7 +26,7 @@ pub fn execute(context: &Context, args: &ListArgs) -> Result<(), RaptError> {
   println!("{} Reading package lists...", EMOJI_BOOKS,);
   let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
   let target_packages =
-    package_client.search_by_name_with_source(&keyword, &sources.into_iter().collect())?;
+    package_client.search_by_name_with_source(&keyword, sources.into_iter().collect())?;
 
   // show result
   if target_packages.is_empty() {

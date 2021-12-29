@@ -24,7 +24,7 @@ list:
 	cargo build
 	./target/debug/rapt2 \
 	--list-dir "/var/lib/apt/lists" \
-	list
+	list vim*
 
 # construct a clea ndocker image and run container with pwd bind-mounted.
 docker:

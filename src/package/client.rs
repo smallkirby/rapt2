@@ -2,10 +2,9 @@
  This file implements an IO reader of Package files.
 */
 
-use crate::source::source::Source;
-
 use super::package::EntryType;
 use super::{error::PackageError, package::Package, parser};
+use crate::source::source::{ArchivedType, Source};
 
 use glob;
 use std::collections::HashSet;
@@ -110,6 +109,66 @@ impl PackageClient {
     }
 
     Ok(results)
+  }
+
+  // search packages from list DB by package name.
+  // Returns found packages with Source info.
+  pub fn search_by_name_with_source(
+    &self,
+    name: &str,
+    sources: &Vec<Source>,
+  ) -> Result<HashSet<PackageWithSource>, PackageError> {
+    let pattern = match glob::Pattern::new(name) {
+      Ok(pattern) => pattern,
+      Err(_) => return Err(PackageError::InvalidPackageName { name: name.into() }),
+    };
+    let mut results: HashSet<PackageWithSource> = HashSet::new();
+    let sources: Vec<&Source> = sources
+      .iter()
+      .filter(|source| source.archive_type == ArchivedType::DEB)
+      .collect();
+
+    for source in sources {
+      let packages = match self.read_single_file(&source.cache_filename()) {
+        Ok(packages) => packages,
+        // XXX ignore unreadable files
+        Err(_) => continue,
+      };
+      let target_packages: Vec<Package> = packages
+        .into_iter()
+        .filter(|package| pattern.matches(&package.name))
+        .collect();
+      for package in target_packages {
+        let package_with_source = PackageWithSource {
+          package,
+          source: source.clone(),
+        };
+        if results.contains(&package_with_source) {
+          // choose newer version
+          let existing = results.get(&package_with_source).unwrap();
+          if existing.package.version < package_with_source.package.version {
+            results.insert(package_with_source);
+          }
+        } else {
+          results.insert(package_with_source);
+        }
+      }
+    }
+
+    Ok(results)
+  }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub struct PackageWithSource {
+  pub package: Package,
+  pub source: Source,
+}
+
+// hash only by its package
+impl std::hash::Hash for PackageWithSource {
+  fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+    self.package.hash(state);
   }
 }
 

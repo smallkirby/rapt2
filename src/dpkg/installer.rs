@@ -14,28 +14,28 @@ pub struct DpkgInstaller {
   pub pwss: Vec<PackageWithSource>,
 }
 
-pub struct DpkgExtracter {
+pub struct DpkgExtracterIter {
   archive_dir: PathBuf,
   curr: usize,
   pub pwss: Vec<PackageWithSource>,
 }
 
-pub struct DpkgExtracterInstance {
+pub struct DpkgExtracter {
   archive_dir: PathBuf,
   pub pws: PackageWithSource,
+}
+
+pub struct DpkgConfigurerIter {
+  curr: usize,
+  pub pwss: Vec<PackageWithSource>,
 }
 
 pub struct DpkgConfigurer {
-  curr: usize,
-  pub pwss: Vec<PackageWithSource>,
-}
-
-pub struct DpkgConfigurerInstance {
   pub pws: PackageWithSource,
 }
 
-impl Iterator for DpkgExtracter {
-  type Item = DpkgExtracterInstance;
+impl Iterator for DpkgExtracterIter {
+  type Item = DpkgExtracter;
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.curr >= self.pwss.len() {
@@ -50,7 +50,7 @@ impl Iterator for DpkgExtracter {
   }
 }
 
-impl DpkgExtracterInstance {
+impl DpkgExtracter {
   pub fn execute(&self) -> Result<(), PackageError> {
     let package = &self.pws.package;
     let archived_filename = package.filename.split("/").last().unwrap();
@@ -80,8 +80,8 @@ impl DpkgExtracterInstance {
   }
 }
 
-impl Iterator for DpkgConfigurer {
-  type Item = DpkgConfigurerInstance;
+impl Iterator for DpkgConfigurerIter {
+  type Item = DpkgConfigurer;
 
   fn next(&mut self) -> Option<Self::Item> {
     if self.curr >= self.pwss.len() {
@@ -95,7 +95,7 @@ impl Iterator for DpkgConfigurer {
   }
 }
 
-impl DpkgConfigurerInstance {
+impl DpkgConfigurer {
   pub fn execute(&self) -> Result<(), PackageError> {
     let package = &self.pws.package;
 
@@ -127,16 +127,16 @@ impl DpkgInstaller {
     Ok(Self { archive_dir, pwss })
   }
 
-  pub fn extracters(&self) -> DpkgExtracter {
-    DpkgExtracter {
+  pub fn extracters_iter(&self) -> DpkgExtracterIter {
+    DpkgExtracterIter {
       archive_dir: self.archive_dir.clone(),
       pwss: self.pwss.clone(),
       curr: 0,
     }
   }
 
-  pub fn configuers(&self) -> DpkgConfigurer {
-    DpkgConfigurer {
+  pub fn configuers_iter(&self) -> DpkgConfigurerIter {
+    DpkgConfigurerIter {
       pwss: self.pwss.clone(),
       curr: 0,
     }

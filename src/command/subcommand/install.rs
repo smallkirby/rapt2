@@ -79,10 +79,10 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     EMOJI_COMPUTER,
   );
   let dpkg_client = DpkgInstaller::new(PathBuf::from(&context.archive_dir), sorted_deps)?;
-  for extracter in dpkg_client.extracters() {
+  for extracter in dpkg_client.extracters_iter() {
     extracter.execute()?;
   }
-  for configuer in dpkg_client.configuers() {
+  for configuer in dpkg_client.configuers_iter() {
     configuer.execute()?;
   }
 

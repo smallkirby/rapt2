@@ -2,7 +2,10 @@ use super::{super::error::RaptError, InstallArgs};
 use crate::{
   algorithm::dag::sort_depends,
   context::Context,
-  dpkg::{client::DpkgClient, installer::DpkgInstaller},
+  dpkg::{
+    client::{DpkgClient, StatusComp},
+    installer::DpkgInstaller,
+  },
   net::binary::BinaryDownloader,
   package::client::{PackageClient, PackageWithSource},
   source::client::SourceClient,
@@ -10,6 +13,7 @@ use crate::{
 
 use console::{style, Emoji};
 use indicatif::{ProgressBar, ProgressStyle};
+use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
 
 static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
@@ -17,6 +21,7 @@ static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
 static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
 static EMOJI_COMPUTER: Emoji<'_, '_> = Emoji("💻", "");
 static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");
+static EMOJI_TARGET: Emoji<'_, '_> = Emoji("🎯", "");
 
 pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   let keyword = args.keyword.clone();
@@ -49,6 +54,27 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   let sorted_deps: Vec<PackageWithSource> =
     sort_depends(deps, &keyword).into_iter().rev().collect();
 
+  // show info of packages
+  show_to_install_packages(&sorted_deps, &keyword);
+
+  // if dry-run, return here
+  if args.dry_run {
+    println!(
+      "{}  This is dry run, so actuall installation is not performed.",
+      EMOJI_INFORMATION
+    );
+    // if verbose mode, show dependencies.
+    if context.verbose {
+      show_deps_verbose(&sorted_deps);
+    }
+    return Ok(());
+  }
+
+  // ask users again to install or not
+  if !confirm_user_yesno() {
+    return Ok(());
+  }
+
   // fetch all packages
   println!(
     "{} {} Fetching binary files...",
@@ -74,19 +100,6 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   }
   progress.abandon_with_message("Complete.");
 
-  // if dry-run, return here
-  if args.dry_run {
-    println!(
-      "{}  This is dry run, so actuall installation is not performed.",
-      EMOJI_INFORMATION
-    );
-    // if verbose mode, show dependencies.
-    if context.verbose {
-      show_deps(&sorted_deps);
-    }
-    return Ok(());
-  }
-
   // install them
   println!(
     "{} {} Installing packages...",
@@ -104,14 +117,13 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   Ok(())
 }
 
-fn show_deps(sorted_deps: &Vec<PackageWithSource>) {
+fn show_deps_verbose(sorted_deps: &Vec<PackageWithSource>) {
   println!(
     "\n{}",
     style("Packages would be installed in below order:").dim()
   );
   for pws in sorted_deps {
     let package = &pws.package;
-    let source = &pws.source;
     print!("\t- {} -> ", style(&package.name).green().dim());
     for dep in &package.depends {
       let dep_str: Vec<String> = dep
@@ -128,5 +140,83 @@ fn show_deps(sorted_deps: &Vec<PackageWithSource>) {
       print!("{}, ", style(dep_str.join(" | ")).dim());
     }
     println!("");
+  }
+}
+
+fn show_to_install_packages(pwss: &Vec<PackageWithSource>, target: &str) {
+  println!(
+    "Below packages are to be installed({}):",
+    style(pwss.len()).bold().cyan()
+  );
+
+  println!("  {} Target: {}", EMOJI_TARGET, style(target).bold());
+
+  // show newly installed packages.
+  let news: Vec<&PackageWithSource> = pwss
+    .iter()
+    .filter(|pws| pws.dpkg_status == Some(StatusComp::NOTINSTALLED))
+    .collect();
+  println!(
+    "  {} New ({}):",
+    EMOJI_SPARKLES,
+    style(news.len()).bold().cyan()
+  );
+  for new in &news {
+    let package = &new.package;
+    println!(
+      "\t - {} ({})",
+      style(&package.name).yellow(),
+      style(&package.version).dim()
+    );
+  }
+  drop(news);
+
+  // show upgraded packages.
+  let upgrades: Vec<&PackageWithSource> = pwss
+    .iter()
+    .filter(|pws| {
+      if let Some(status) = &pws.dpkg_status {
+        match status {
+          StatusComp::OLD(_) => true,
+          _ => false,
+        }
+      } else {
+        false
+      }
+    })
+    .collect();
+  println!(
+    "  {} Upgraded({}):",
+    EMOJI_SPARKLES,
+    style(upgrades.len()).bold().cyan()
+  );
+  for upgrade in upgrades {
+    let package = &upgrade.package;
+    match upgrade.dpkg_status.clone().unwrap() {
+      StatusComp::OLD(old_version) => println!(
+        "\t - {} ({} -> {})",
+        style(&package.name).yellow(),
+        style(&old_version).dim(),
+        style(&package.version).dim()
+      ),
+      _ => println!(
+        "\t - {} (-> {})",
+        style(&package.name).yellow(),
+        style(&package.version).dim()
+      ),
+    }
+  }
+}
+
+fn confirm_user_yesno() -> bool {
+  let mut s = String::new();
+  print!("Do you really install them? [yN] > ");
+  stdout().flush().unwrap();
+  stdin().read_line(&mut s).expect("Invalid input");
+
+  if s.to_lowercase().starts_with("y") {
+    true
+  } else {
+    false
   }
 }

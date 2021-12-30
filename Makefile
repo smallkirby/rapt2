@@ -26,6 +26,13 @@ list:
 	--list-dir "/var/lib/apt/lists" \
 	list vim*
 
+# do `rapt2 search`
+dep:
+	cargo build --release
+	./target/release/rapt2 \
+	--list-dir "/var/lib/apt/lists" \
+	dep vim
+
 # construct a clea ndocker image and run container with pwd bind-mounted.
 docker:
 	cargo build
@@ -40,4 +47,4 @@ docker:
 		--rm $(DOCKER_IMAGE_NAME) \
 		/bin/bash
 
-.PHONY: update update-deb docker
+.PHONY: update update-deb docker list dep

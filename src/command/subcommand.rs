@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand};
 
+pub mod dep;
 pub mod list;
 pub mod update;
 
@@ -27,6 +28,11 @@ pub enum SubCommand {
     #[clap(flatten)]
     args: ListArgs,
   },
+  #[clap(about = "Recursively search dependencies of a package.")]
+  DEP {
+    #[clap(flatten)]
+    args: DepArgs,
+  },
 }
 
 #[derive(Args, Debug)]
@@ -38,5 +44,11 @@ pub struct ListArgs {
   pub installed: bool,
 
   #[clap(help = "Keyword to search for.")]
+  pub keyword: String,
+}
+
+#[derive(Args, Debug)]
+pub struct DepArgs {
+  #[clap(help = "Target package name.")]
   pub keyword: String,
 }

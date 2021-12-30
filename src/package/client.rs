@@ -173,6 +173,7 @@ impl PackageClient {
   }
 
   // Get target packages and all of its dependencies with Source information.
+  // Result is returned in flattened HashSet.
   pub fn get_package_with_deps(
     &self,
     name: &str,

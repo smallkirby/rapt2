@@ -4,14 +4,12 @@
 
 use super::status::*;
 use crate::apt::extended_states;
-use crate::package::client::PackageWithSource;
 use crate::package::{error::PackageError, package::*, parser, version};
 
 use once_cell::sync::OnceCell;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 
 // Dpkg IO client.
 // It ensures that dpkg status file is read only once for each `DpkgClient` by using `OnceCell`.
@@ -147,50 +145,6 @@ impl DpkgClient {
       }
       None => Ok(StatusComp::NOTINSTALLED),
     }
-  }
-
-  pub fn install_packages(
-    &self,
-    pwss: &Vec<PackageWithSource>,
-    archive_dir: PathBuf,
-  ) -> Result<(), PackageError> {
-    for pws in pwss {
-      self.install_single_package(pws, archive_dir.clone())?;
-    }
-
-    Ok(())
-  }
-
-  fn install_single_package(
-    &self,
-    pws: &PackageWithSource,
-    archive_dir: PathBuf,
-  ) -> Result<(), PackageError> {
-    let package = &pws.package;
-    let archived_filename = package.filename.split("/").last().unwrap();
-    let archived_path = archive_dir.join(archived_filename);
-    let archived_fullname = archived_path.to_string_lossy().to_string();
-
-    if !archived_path.as_path().is_file() {
-      return Err(PackageError::FileNotFound {
-        target: archived_fullname,
-      });
-    }
-
-    let output = Command::new("dpkg")
-      .args(&["-i", &archived_fullname])
-      .stdout(Stdio::piped())
-      .stderr(Stdio::piped())
-      .spawn()
-      .unwrap()
-      .wait_with_output()
-      .unwrap();
-    let outstr = String::from_utf8(output.stdout).unwrap();
-    println!("{}", outstr);
-    let errstr = String::from_utf8(output.stderr).unwrap();
-    println!("{}", errstr);
-
-    Ok(())
   }
 }
 

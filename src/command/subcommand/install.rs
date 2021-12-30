@@ -2,7 +2,7 @@ use super::{super::error::RaptError, InstallArgs};
 use crate::{
   algorithm::dag::sort_depends,
   context::Context,
-  dpkg::client::DpkgClient,
+  dpkg::{client::DpkgClient, installer::DpkgInstaller},
   net::binary::BinaryDownloader,
   package::client::{PackageClient, PackageWithSource},
   source::client::SourceClient,
@@ -78,8 +78,13 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     style("[3/3]").bold().dim(),
     EMOJI_COMPUTER,
   );
-  let dpkg_client = DpkgClient::new(PathBuf::from(&context.dpkg_dir));
-  dpkg_client.install_packages(&sorted_deps, PathBuf::from(&context.archive_dir))?;
+  let dpkg_client = DpkgInstaller::new(PathBuf::from(&context.archive_dir), sorted_deps)?;
+  for extracter in dpkg_client.extracters() {
+    extracter.execute()?;
+  }
+  for configuer in dpkg_client.configuers() {
+    configuer.execute()?;
+  }
 
   Ok(())
 }

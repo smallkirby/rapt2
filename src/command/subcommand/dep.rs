@@ -33,7 +33,11 @@ pub fn execute(context: &Context, args: &DepArgs) -> Result<(), RaptError> {
   let deps = match package_client.get_package_with_deps(&keyword, &sources.into_iter().collect()) {
     Ok(deps) => deps,
     Err(PackageError::PackageNotFound { package_name }) => {
-      println!("{} Package {} not found.", EMOJI_CROSS, package_name);
+      println!(
+        "{} Package {} not found.",
+        EMOJI_CROSS,
+        style(package_name).cyan()
+      );
       return Ok(());
     }
     Err(err) => return Err(err.into()),

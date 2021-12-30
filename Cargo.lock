@@ -773,6 +773,7 @@ dependencies = [
  "indicatif",
  "itertools",
  "lazy_static",
+ "once_cell",
  "regex",
  "reqwest",
  "thiserror",

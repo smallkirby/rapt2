@@ -16,6 +16,7 @@ static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
 static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
 static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
 static EMOJI_COMPUTER: Emoji<'_, '_> = Emoji("💻", "");
+static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");
 
 pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   let keyword = args.keyword.clone();
@@ -72,6 +73,19 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   }
   progress.abandon_with_message("Complete.");
 
+  // if dry-run, return here
+  if args.dry_run {
+    println!(
+      "{}  This is dry run, so actuall installation is not performed.",
+      EMOJI_INFORMATION
+    );
+    // if verbose mode, show dependencies.
+    if context.verbose {
+      show_deps(&sorted_deps);
+    }
+    return Ok(());
+  }
+
   // install them
   println!(
     "{} {} Installing packages...",
@@ -87,4 +101,31 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   }
 
   Ok(())
+}
+
+fn show_deps(sorted_deps: &Vec<PackageWithSource>) {
+  println!(
+    "\n{}",
+    style("Packages would be installed in below order:").dim()
+  );
+  for pws in sorted_deps {
+    let package = &pws.package;
+    let source = &pws.source;
+    print!("\t- {} -> ", style(&package.name).green().dim());
+    for dep in &package.depends {
+      let dep_str: Vec<String> = dep
+        .depends
+        .iter()
+        .map(|dep| {
+          if let Some(version) = &dep.version {
+            format!("{}({})", dep.package, version)
+          } else {
+            format!("{}(any)", dep.package)
+          }
+        })
+        .collect();
+      print!("{}, ", style(dep_str.join(" | ")).dim());
+    }
+    println!("");
+  }
 }

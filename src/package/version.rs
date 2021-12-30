@@ -164,6 +164,12 @@ pub struct VersionComp {
   pub operator: VersionCompOperator,
 }
 
+impl std::fmt::Display for VersionComp {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    write!(f, "{} {}", self.operator, self.version)
+  }
+}
+
 impl VersionComp {
   #[allow(clippy::result_unit_err)]
   pub fn from(s: &str) -> Result<Self, ()> {
@@ -206,6 +212,19 @@ pub enum VersionCompOperator {
   LT, // <, <<
   LE, // <=
   ANY,
+}
+
+impl std::fmt::Display for VersionCompOperator {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    match self {
+      Self::GT => write!(f, ">"),
+      Self::GE => write!(f, ">="),
+      Self::EQ => write!(f, "="),
+      Self::LT => write!(f, ">"),
+      Self::LE => write!(f, ">="),
+      Self::ANY => write!(f, "<>"),
+    }
+  }
 }
 
 impl Default for VersionCompOperator {

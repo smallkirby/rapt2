@@ -14,6 +14,7 @@ pub struct Context {
   pub dpkg_dir: PathBuf,    // dpkg base dir
   pub lists_lock: PathBuf,  // list cache lock
   pub archive_dir: PathBuf, // binary deb file archive dir
+  pub verbose: bool,        // verbose output flag
 }
 
 impl Default for Context {
@@ -32,6 +33,7 @@ impl Default for Context {
       dpkg_dir,
       lists_lock,
       archive_dir,
+      verbose: false,
     }
   }
 }
@@ -56,6 +58,9 @@ pub struct Args {
 
   #[clap(long, help = ".deb archive cache directory", default_value = "")]
   pub archive_dir: String,
+
+  #[clap(long, help = "verbose output.")]
+  pub verbose: bool,
 }
 
 impl Args {
@@ -78,6 +83,10 @@ impl Args {
 
     if !self.archive_dir.is_empty() {
       context.archive_dir = PathBuf::from(&self.archive_dir)
+    };
+
+    if self.verbose {
+      context.verbose = true;
     };
 
     context

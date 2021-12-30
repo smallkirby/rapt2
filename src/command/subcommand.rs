@@ -61,4 +61,7 @@ pub struct DepArgs {
 pub struct InstallArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
+
+  #[clap(short = 'N', long, help = "Dry run.")]
+  pub dry_run: bool,
 }

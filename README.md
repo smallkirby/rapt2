@@ -2,16 +2,22 @@
 
 **`rapt2`** is a *kawaii* toy implementation of `apt`(Debian Package Manager) written in Rust (Original `apt` is written in C++).
 
+**`rapt2`** is simplified, made of only 3K LOC of Rust (as of 2021.12.30). Hence, it has limitation compared to original one. But no problem. *kawaii* is justice.
+
 - `update`
+
 ![update](/img/update-2.png)
 
 - `install`
+
 ![install](/img/install-1.png)
 
 - `dep`
+
 ![dep](/img/dep-1.png)
 
 - `list`
+
 ![list](/img/list-1.png)
 
 ## Development
@@ -22,5 +28,7 @@
 ## TODOs
 
 - multi-threaded download and installation
+- caching
+- more fast format of cache files
 - commands implemented in original `apt`
 - etc

@@ -92,15 +92,15 @@ impl DpkgClient {
       .collect();
 
     // check its status by `/var/lib/dpkg/status`.
-    for package in installeds {
+    for package in &installeds {
       let candidate_new = match news.get(&package) {
         Some(candidate) => candidate,
         None => continue, // XXX installed, but no information in Packages files
       };
       if candidate_new.version > package.version {
         results.push(PackageStatus {
-          package,
-          status: StatusComp::OLD,
+          package: package.clone(),
+          status: StatusComp::OLD(package.version.clone()),
           new_version: Some(candidate_new.version.clone()),
         });
       }
@@ -122,12 +122,36 @@ impl DpkgClient {
 
     Ok(results)
   }
+
+  pub fn check_installed_status(&mut self, target: &Package) -> Result<StatusComp, PackageError> {
+    let installeds = self.get_installed_packages()?;
+    match installeds
+      .iter()
+      .find(|installed| installed.name == target.name)
+    {
+      Some(package) => {
+        // check only installed packages
+        if let Some(status) = &package.status {
+          if status.status != DpkgStatusStatus::Installed {
+            return Ok(StatusComp::NOTINSTALLED);
+          }
+        }
+        // compare version
+        if package.version < target.version {
+          Ok(StatusComp::OLD(package.version.clone()))
+        } else {
+          Ok(StatusComp::UPTODATE)
+        }
+      }
+      None => Ok(StatusComp::NOTINSTALLED),
+    }
+  }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 pub enum StatusComp {
   NOTINSTALLED,
-  OLD,
+  OLD(version::Version),
   UPTODATE,
 }
 
@@ -143,7 +167,7 @@ pub struct PackageStatus {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::package::client::PackageClient;
+  use crate::package::{client::PackageClient, version::Version};
 
   #[test]
   fn test_dpkg_status_is_readable() {
@@ -159,7 +183,10 @@ mod tests {
     let mut dpkg_client = DpkgClient::new(PathBuf::from("./tests/resources/dpkg"));
     let obsolute_packages = dpkg_client.get_obsolute_packages(&packages).unwrap();
     assert_eq!(obsolute_packages.len(), 1);
-    assert_eq!(obsolute_packages[0].status, StatusComp::OLD);
+    assert_eq!(
+      obsolute_packages[0].status,
+      StatusComp::OLD(Version::from("2:8.1.2269-1ubuntu5").unwrap())
+    );
     assert_eq!(obsolute_packages[0].package.name, "vim");
   }
 }

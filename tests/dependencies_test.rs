@@ -25,7 +25,9 @@ fn test_resolve_deps() {
     component: Component::NULL,
   };
   let client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
-  let deps = client.get_package_with_deps("0", &vec![source]).unwrap();
+  let deps = client
+    .get_package_with_deps("0", &vec![source], true, None)
+    .unwrap();
 
   // check if dependencies are correctly gathered from list files.
   let package_names: Vec<String> = (0..=9).into_iter().map(|n| n.to_string()).collect();

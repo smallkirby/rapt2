@@ -10,6 +10,7 @@
 
 use super::package::EntryType;
 use super::{error::PackageError, package::Package, parser};
+use crate::dpkg::client::{DpkgClient, StatusComp};
 use crate::source::source::{ArchivedType, Source};
 
 use glob;
@@ -129,6 +130,7 @@ impl PackageClient {
           .map(|package| PackageWithSource {
             package,
             source: source.clone(),
+            dpkg_status: None,
           })
           .collect();
         for package_with_source in packages_with_source {
@@ -176,18 +178,20 @@ impl PackageClient {
   // Result is returned in flattened HashSet.
   pub fn get_package_with_deps(
     &self,
-    name: &str,
-    sources: &Vec<Source>,
+    name: &str,                               // target package
+    sources: &Vec<Source>,                    // sources to search for packages
+    ignore_installed: bool,                   // ignore already installed packages
+    mut dpkg_client: Option<&mut DpkgClient>, // needed if `ignore_installed` is true
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
     let pattern = glob::Pattern::new(name).unwrap();
     let packages_with_source = self.read_all_from_source_with_source(sources)?;
 
     // first, find target package itself
-    let target_package_ws = match packages_with_source
+    let mut target_package_ws = match packages_with_source
       .iter()
       .find(|package_ws| pattern.matches(&package_ws.package.name))
     {
-      Some(target) => target,
+      Some(target) => target.clone(),
       None => {
         return Err(PackageError::PackageNotFound {
           package_name: name.into(),
@@ -195,10 +199,31 @@ impl PackageClient {
       }
     };
 
-    // next, find all its dependencies recursively
+    // check target itself is already installed
     let mut deps: HashSet<PackageWithSource> = HashSet::new();
+    if !ignore_installed {
+      match dpkg_client
+        .as_mut()
+        .unwrap()
+        .check_installed_status(&target_package_ws.package)?
+      {
+        StatusComp::UPTODATE => {
+          deps.insert(target_package_ws.clone());
+          return Ok(deps);
+        }
+        status => target_package_ws.dpkg_status = Some(status),
+      };
+    }
+
+    // next, find all its dependencies recursively
     deps.insert(target_package_ws.clone());
-    self.get_dependency_recursive(target_package_ws, &packages_with_source, &mut deps)?;
+    self.get_dependency_recursive(
+      &target_package_ws,
+      &packages_with_source,
+      &mut deps,
+      ignore_installed,
+      &mut dpkg_client,
+    )?;
 
     Ok(deps)
   }
@@ -208,6 +233,8 @@ impl PackageClient {
     target: &PackageWithSource,
     all_packages_ws: &HashSet<PackageWithSource>,
     acc: &mut HashSet<PackageWithSource>,
+    ignore_installed: bool, // ignore already installed packages
+    dpkg_client: &mut Option<&mut DpkgClient>,
   ) -> Result<(), PackageError> {
     for dep in &target.package.depends {
       // XXX choose arbitrary dependencie
@@ -220,7 +247,24 @@ impl PackageClient {
         .into_iter()
         .find(|pws| pws.package.name == dep.package)
       {
-        Some(target) => target,
+        Some(target) => {
+          if !ignore_installed {
+            match dpkg_client
+              .as_mut()
+              .unwrap()
+              .check_installed_status(&target.package)?
+            {
+              StatusComp::UPTODATE => continue,
+              status => PackageWithSource {
+                package: target.package.clone(),
+                source: target.source.clone(),
+                dpkg_status: Some(status),
+              },
+            }
+          } else {
+            target.clone()
+          }
+        }
         None => {
           return Err(PackageError::PackageNotFound {
             package_name: dep.package.to_string(),
@@ -232,7 +276,13 @@ impl PackageClient {
       acc.insert(depended_on.clone());
 
       // more search recursively
-      self.get_dependency_recursive(depended_on, all_packages_ws, acc)?;
+      self.get_dependency_recursive(
+        &depended_on,
+        all_packages_ws,
+        acc,
+        ignore_installed,
+        dpkg_client,
+      )?;
     }
 
     Ok(())
@@ -243,6 +293,7 @@ impl PackageClient {
 pub struct PackageWithSource {
   pub package: Package,
   pub source: Source,
+  pub dpkg_status: Option<StatusComp>,
 }
 
 // hash only by its package

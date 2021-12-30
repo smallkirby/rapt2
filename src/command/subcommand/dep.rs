@@ -30,7 +30,12 @@ pub fn execute(context: &Context, args: &DepArgs) -> Result<(), RaptError> {
     style(&keyword).cyan(),
   );
   let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
-  let deps = match package_client.get_package_with_deps(&keyword, &sources.into_iter().collect()) {
+  let deps = match package_client.get_package_with_deps(
+    &keyword,
+    &sources.into_iter().collect(),
+    true,
+    None,
+  ) {
     Ok(deps) => deps,
     Err(PackageError::PackageNotFound { package_name }) => {
       println!(

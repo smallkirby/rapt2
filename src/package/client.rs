@@ -208,8 +208,7 @@ impl PackageClient {
         .check_installed_status(&target_package_ws.package)?
       {
         StatusComp::UPTODATE => {
-          deps.insert(target_package_ws.clone());
-          return Ok(deps);
+          return Ok(HashSet::new());
         }
         status => target_package_ws.dpkg_status = Some(status),
       };

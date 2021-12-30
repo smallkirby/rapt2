@@ -9,16 +9,18 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Context {
-  pub list_dir: PathBuf,   // package list dir
-  pub source_dir: PathBuf, // source list dir
-  pub dpkg_dir: PathBuf,   // dpkg base dir
-  pub lists_lock: PathBuf, // list cache lock
+  pub list_dir: PathBuf,    // package list dir
+  pub source_dir: PathBuf,  // source list dir
+  pub dpkg_dir: PathBuf,    // dpkg base dir
+  pub lists_lock: PathBuf,  // list cache lock
+  pub archive_dir: PathBuf, // binary deb file archive dir
 }
 
 impl Default for Context {
   fn default() -> Self {
     let list_dir = PathBuf::from("/var/lib/apt/lists.rapt2");
     let source_dir = PathBuf::from("/etc/apt");
+    let archive_dir = PathBuf::from("/var/cache/apt/archives");
 
     let dpkg_dir = PathBuf::from("/var/lib/dpkg");
 
@@ -29,6 +31,7 @@ impl Default for Context {
       source_dir,
       dpkg_dir,
       lists_lock,
+      archive_dir,
     }
   }
 }
@@ -50,6 +53,9 @@ pub struct Args {
 
   #[clap(long, help = "package database directory", default_value = "")]
   pub list_dir: String,
+
+  #[clap(long, help = ".deb archive cache directory", default_value = "")]
+  pub archive_dir: String,
 }
 
 impl Args {
@@ -68,6 +74,10 @@ impl Args {
 
     if !self.source_dir.is_empty() {
       context.source_dir = PathBuf::from(&self.source_dir)
+    };
+
+    if !self.archive_dir.is_empty() {
+      context.archive_dir = PathBuf::from(&self.archive_dir)
     };
 
     context

@@ -1,3 +1,7 @@
+/*
+ This file defines a downloader of Packages file in ubuntu repository.
+*/
+
 use super::error::DownloadError;
 use crate::source::source::*;
 

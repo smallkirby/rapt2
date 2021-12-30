@@ -36,7 +36,7 @@ dep:
 # do `rapt2 search`
 install:
 	cargo build --release
-	./target/release/rapt2 \
+	sudo ./target/release/rapt2 \
 	--list-dir "/var/lib/apt/lists" \
 	install vim
 

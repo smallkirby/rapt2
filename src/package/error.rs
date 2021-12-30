@@ -39,4 +39,10 @@ pub enum PackageError {
     depending_on: String,
     depending_on_version: VersionComp,
   },
+
+  #[error("Failed to install package")]
+  InstallFailed {
+    package_name: String,
+    errstr: String,
+  },
 }

@@ -53,6 +53,7 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
 
   let sorted_deps: Vec<PackageWithSource> =
     sort_depends(deps, &keyword).into_iter().rev().collect();
+  let package_num = sorted_deps.len();
 
   // show info of packages
   show_to_install_packages(&sorted_deps, &keyword);
@@ -107,11 +108,35 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     EMOJI_COMPUTER,
   );
   let dpkg_client = DpkgInstaller::new(PathBuf::from(&context.archive_dir), sorted_deps)?;
-  for extracter in dpkg_client.extracters_iter() {
-    extracter.execute()?;
+  {
+    // extract all packages
+    let prog_style = ProgressStyle::default_bar()
+      .template("   extract   {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+      .progress_chars("##-");
+    let progress = ProgressBar::new(package_num as u64);
+    progress.set_style(prog_style);
+
+    for extracter in dpkg_client.extracters_iter() {
+      progress.set_message(format!("{}", &extracter.pws.package.name));
+      extracter.execute()?;
+      progress.inc(1);
+    }
+    progress.abandon_with_message("Complete.");
   }
-  for configuer in dpkg_client.configuers_iter() {
-    configuer.execute()?;
+  {
+    // configure all packages
+    let prog_style = ProgressStyle::default_bar()
+      .template("   configure {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+      .progress_chars("##-");
+    let progress = ProgressBar::new(package_num as u64);
+    progress.set_style(prog_style);
+
+    for configuer in dpkg_client.configuers_iter() {
+      progress.set_message(format!("{}", &configuer.pws.package.name));
+      configuer.execute()?;
+      progress.inc(1);
+    }
+    progress.abandon_with_message("Complete.");
   }
 
   Ok(())

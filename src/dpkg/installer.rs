@@ -4,10 +4,7 @@
 
 use crate::package::{client::PackageWithSource, error::PackageError};
 
-use std::{
-  path::PathBuf,
-  process::{Command, Stdio},
-};
+use std::{path::PathBuf, process::Command};
 
 pub struct DpkgInstaller {
   archive_dir: PathBuf,
@@ -65,18 +62,17 @@ impl DpkgExtracter {
 
     let output = Command::new("dpkg")
       .args(&["--unpack", &archived_fullname])
-      .stdout(Stdio::piped())
-      .stderr(Stdio::piped())
-      .spawn()
-      .unwrap()
-      .wait_with_output()
+      .output()
       .unwrap();
-    let outstr = String::from_utf8(output.stdout).unwrap();
-    println!("{}", outstr);
-    let errstr = String::from_utf8(output.stderr).unwrap();
-    println!("{}", errstr);
-
-    Ok(())
+    if output.status.success() {
+      Ok(())
+    } else {
+      let errstr = String::from_utf8(output.stdout).unwrap();
+      Err(PackageError::InstallFailed {
+        package_name: package.name.to_string(),
+        errstr,
+      })
+    }
   }
 }
 
@@ -101,18 +97,17 @@ impl DpkgConfigurer {
 
     let output = Command::new("dpkg")
       .args(&["--configure", &package.name])
-      .stdout(Stdio::piped())
-      .stderr(Stdio::piped())
-      .spawn()
-      .unwrap()
-      .wait_with_output()
+      .output()
       .unwrap();
-    let outstr = String::from_utf8(output.stdout).unwrap();
-    println!("{}", outstr);
-    let errstr = String::from_utf8(output.stderr).unwrap();
-    println!("{}", errstr);
-
-    Ok(())
+    if output.status.success() {
+      Ok(())
+    } else {
+      let errstr = String::from_utf8(output.stderr).unwrap();
+      Err(PackageError::InstallFailed {
+        package_name: package.name.to_string(),
+        errstr,
+      })
+    }
   }
 }
 

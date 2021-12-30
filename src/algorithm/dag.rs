@@ -10,7 +10,7 @@
 
 /*
  XXX
- Now, this Graph supports only single depth cyclic depth.
+ Now, this Graph supports only single cyclic depth.
  In short, below condition is unsupported:
 
    ┌─────────────┐
@@ -270,7 +270,8 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
 // NOTE: Caller must ensure that all necessary packages are included in `deps`.
 //      If depended-on package is not found in `deps`, this function just ignores it.
 //      (cuz it would happen when already-installed packages are removed from `deps`.)
-pub fn sort_depends(deps: HashSet<PackageWithSource>) -> Vec<PackageWithSource> {
+// NOTE: result is returned in reversed-order of deps.
+pub fn sort_depends(deps: HashSet<PackageWithSource>, target_name: &str) -> Vec<PackageWithSource> {
   let packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
   let mut graph = Graph::from(packages).unwrap();
 
@@ -280,11 +281,25 @@ pub fn sort_depends(deps: HashSet<PackageWithSource>) -> Vec<PackageWithSource> 
 
   let mut results = vec![];
   let group_orders = graph.topological_order;
+
+  // NOTE: if target package itself has circular dependencies,
+  //      at least the target package should be installed at the end.
+  let target_group = graph
+    .nodes
+    .iter()
+    .find(|node| node.package.name == target_name)
+    .unwrap()
+    .group;
+
   for group_order in 0..group_orders.len() {
     let group_id = group_orders
       .iter()
       .position(|i| i.clone() == group_order as i64)
       .unwrap();
+    if group_id as i64 == target_group {
+      // ignore the group including target package
+      continue;
+    }
     let nodes: Vec<&PackageNode> = graph
       .nodes
       .iter()
@@ -303,7 +318,28 @@ pub fn sort_depends(deps: HashSet<PackageWithSource>) -> Vec<PackageWithSource> 
     }
   }
 
-  results
+  // push nodes in target group
+  let mut target_results: Vec<PackageWithSource> = vec![];
+  for node in graph.nodes.iter().filter(|node| node.group == target_group) {
+    let pws = deps
+      .iter()
+      .find(|pws| pws.package == node.package)
+      .unwrap()
+      .clone();
+    // if node is target package itself, add it at the end.
+    if pws.package.name == target_name {
+      let tmp = target_results.clone();
+      target_results = vec![pws];
+      target_results.extend(tmp);
+    } else {
+      target_results.push(pws);
+    }
+  }
+
+  vec![target_results, results]
+    .into_iter()
+    .flatten()
+    .collect()
 }
 
 #[cfg(test)]

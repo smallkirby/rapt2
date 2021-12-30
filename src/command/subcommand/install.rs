@@ -46,7 +46,8 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     return Ok(());
   }
 
-  let sorted_deps: Vec<PackageWithSource> = sort_depends(deps).into_iter().rev().collect();
+  let sorted_deps: Vec<PackageWithSource> =
+    sort_depends(deps, &keyword).into_iter().rev().collect();
 
   // fetch all packages
   println!(

@@ -43,7 +43,7 @@ fn test_resolve_deps() {
   }
 
   // check if deps are correctly resolved using topological sort
-  let sorted_deps = sort_depends(deps);
+  let sorted_deps = sort_depends(deps, "0");
   assert_eq!(10, sorted_deps.len());
 
   // order of nodes in the same group is undefined.

@@ -2,7 +2,7 @@
  This file defines Error type for `package` module.
 */
 
-use super::package::EntryType;
+use super::{package::EntryType, version::*};
 
 use std::io;
 use thiserror::Error;
@@ -31,4 +31,12 @@ pub enum PackageError {
 
   #[error("Package not found: {package_name:?}")]
   PackageNotFound { package_name: String },
+
+  #[error("Failed to resolve dependencies")]
+  UnresolvedDependency {
+    depended_on: String,
+    depended_on_version: Version,
+    depending_on: String,
+    depending_on_version: VersionComp,
+  },
 }

@@ -36,9 +36,6 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum DagError {
-  #[error("Target package not existing.")]
-  TargetNotExist { from: String, target: String },
-
   #[error("Function is called with invalid Graph state.")]
   InvalidStateError,
 }
@@ -250,12 +247,7 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
         .position(|package_nodes| package_nodes.package.name == dep.package)
       {
         Some(i) => i,
-        None => {
-          return Err(DagError::TargetNotExist {
-            target: dep.package.to_string(),
-            from: nodes[ix].package.name.to_string(),
-          })
-        }
+        None => continue, // just ignore when target is not found
       };
       // assign normal tos
       nodes[ix].to.push(cand);
@@ -274,6 +266,10 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
   })
 }
 
+// Sort packages dependencies in topological way.
+// NOTE: Caller must ensure that all necessary packages are included in `deps`.
+//      If depended-on package is not found in `deps`, this function just ignores it.
+//      (cuz it would happen when already-installed packages are removed from `deps`.)
 pub fn sort_depends(deps: HashSet<PackageWithSource>) -> Vec<PackageWithSource> {
   let packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
   let mut graph = Graph::from(packages).unwrap();

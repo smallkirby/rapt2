@@ -1,6 +1,7 @@
 use clap::{Args, Subcommand};
 
 pub mod dep;
+pub mod install;
 pub mod list;
 pub mod update;
 
@@ -13,8 +14,11 @@ pub enum SubCommand {
   },
   #[clap(about = "(not implemented)")]
   UPGRADE,
-  #[clap(about = "(not implemented)")]
-  INSTALL,
+  #[clap(about = "Install packages")]
+  INSTALL {
+    #[clap(flatten)]
+    args: InstallArgs,
+  },
   #[clap(about = "(not implemented)")]
   REMOVE,
   #[clap(about = "(not implemented)")]
@@ -49,6 +53,12 @@ pub struct ListArgs {
 
 #[derive(Args, Debug)]
 pub struct DepArgs {
+  #[clap(help = "Target package name.")]
+  pub keyword: String,
+}
+
+#[derive(Args, Debug)]
+pub struct InstallArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
 }

@@ -184,6 +184,18 @@ impl VersionComp {
       }
     }
   }
+
+  fn matches(&self, other: &Version) -> bool {
+    use VersionCompOperator::*;
+    match self.operator {
+      GT => &self.version < other,
+      GE => &self.version <= other,
+      EQ => &self.version == other,
+      LT => &self.version > other,
+      LE => &self.version >= other,
+      ANY => true,
+    }
+  }
 }
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -193,11 +205,12 @@ pub enum VersionCompOperator {
   EQ, // =
   LT, // <, <<
   LE, // <=
+  ANY,
 }
 
 impl Default for VersionCompOperator {
   fn default() -> Self {
-    Self::EQ
+    Self::ANY
   }
 }
 
@@ -303,5 +316,17 @@ mod tests {
     assert_eq!(v1 == v2, true);
     assert_eq!(v3 < v4 && v4 < v5 && v5 < v6 && v6 < v7, true);
     assert_eq!(v8 < v9, true);
+  }
+
+  #[test]
+  fn version_comp_comparision() {
+    let v1 = VersionComp::from("> 1.0.0").unwrap();
+    let v2 = VersionComp::from("= 2.0.0").unwrap();
+    let v3 = VersionComp::from(">> 1.0.0").unwrap();
+    let v4 = VersionComp::from("<< 2.0.0").unwrap();
+    assert_eq!(v1.matches(&v2.version), true);
+    assert_eq!(v1.matches(&v3.version), false);
+    assert_eq!(v2.matches(&v4.version), true);
+    assert_eq!(v2.matches(&v2.version), true);
   }
 }

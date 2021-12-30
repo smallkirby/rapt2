@@ -21,6 +21,7 @@ impl Rapt {
       SubCommand::UPDATE { args } => update::execute(&self.context, args),
       SubCommand::LIST { args } => list::execute(&self.context, args),
       SubCommand::DEP { args } => dep::execute(&self.context, args),
+      SubCommand::INSTALL { args } => install::execute(&self.context, args),
       _ => unimplemented!(),
     };
 

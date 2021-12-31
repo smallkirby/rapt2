@@ -96,6 +96,24 @@ impl Source {
       .collect()
   }
 
+  pub fn inrelease_url(&self) -> String {
+    let mut url = self.url.as_str();
+    let mut distro = self.distro.as_str();
+
+    if url.ends_with('/') {
+      let mut tmp = url.chars();
+      tmp.next_back().unwrap();
+      url = tmp.as_str();
+    }
+    if distro.ends_with('/') {
+      let mut tmp = distro.chars();
+      tmp.next_back().unwrap();
+      distro = tmp.as_str();
+    }
+
+    format!("{}/dists/{}/InRelease", url, distro)
+  }
+
   pub fn packages_url(&self) -> String {
     let mut url = self.url.as_str();
     let mut distro = self.distro.as_str();
@@ -135,6 +153,11 @@ impl Source {
   pub fn cache_filename(&self) -> String {
     let text = String::from(self.packages_url().split("://").collect::<Vec<&str>>()[1]);
     text.replace("/", "_")[..text.len() - 3].into()
+  }
+
+  pub fn inrelease_filename(&self) -> String {
+    let text = String::from(self.inrelease_url().split("://").collect::<Vec<&str>>()[1]);
+    text.replace("/", "_").into()
   }
 }
 

@@ -2,10 +2,12 @@
  This file implements misc helper functions.
 */
 
+use chrono::{DateTime, NaiveDateTime, Utc};
 use fs2::FileExt;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::fs;
 use std::path::PathBuf;
+use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 use users::get_current_uid;
 
@@ -121,4 +123,12 @@ pub fn create_long_spinner(msg: String) -> ProgressBar {
 
 pub fn ami_root() -> bool {
   get_current_uid() == 0
+}
+
+// convert SystemTime into `If-Modified-Since` format string.
+pub fn timestamp2ims(t: SystemTime) -> String {
+  let secs = t.duration_since(UNIX_EPOCH).unwrap().as_secs();
+  let naive = NaiveDateTime::from_timestamp(secs as i64, 0);
+  let utc: DateTime<Utc> = DateTime::from_utc(naive, Utc);
+  utc.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }

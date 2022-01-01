@@ -14,9 +14,12 @@ pub enum DownloadError {
   #[error("invalid status code is returned: {status:?}")]
   InvalidStatusCode { status: StatusCode },
 
-  #[error("error while extracting gziped content")]
-  UnzipFailed(#[from] std::io::Error),
+  #[error("file IO error")]
+  FileIOError(#[from] std::io::Error),
 
   #[error("file/dir for caching not found: {name:?}")]
   FileNotFound { name: String },
+
+  #[error("package IO error")]
+  PackageIOError(#[from] crate::package::error::PackageError),
 }

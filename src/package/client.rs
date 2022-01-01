@@ -37,6 +37,11 @@ impl PackageClient {
   // read a single list file.
   // `filename` is relative filename to `self.cache_dir`.
   pub fn read_single_file(&self, filename: &str) -> Result<HashSet<Package>, PackageError> {
+    let content = self.read_single_file_raw(filename)?;
+    parser::parse_entries_as_binary(&content) // XXX
+  }
+
+  pub fn read_single_file_raw(&self, filename: &str) -> Result<String, PackageError> {
     let pathbuf = self.cache_dir.join(filename);
     let path = pathbuf.as_path();
 
@@ -47,7 +52,7 @@ impl PackageClient {
     }
 
     let content = fs::read_to_string(path)?;
-    parser::parse_entries_as_binary(&content) // XXX
+    Ok(content)
   }
 
   pub fn read_all_from_source(

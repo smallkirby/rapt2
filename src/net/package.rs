@@ -91,17 +91,7 @@ impl PackageDownloadClient {
   }
 
   pub fn get_done_packages_num(&mut self) -> usize {
-    self.increment_packages_counter();
     self.cur_packages
-  }
-
-  fn increment_packages_counter(&mut self) {
-    while self.cur_packages < self.source_infos.len() {
-      if self.source_infos[self.cur_packages].should_update.unwrap() == true {
-        break;
-      }
-      self.cur_packages += 1;
-    }
   }
 
   pub fn get_done_inrelease_num(&mut self) -> usize {
@@ -122,9 +112,6 @@ impl PackageDownloadClient {
   }
 
   pub fn get_next_target_source_packages(&mut self) -> Option<Source> {
-    // increment `self.cur_packages` til finding not-check Source.
-    self.increment_packages_counter();
-
     if self.cur_packages >= self.source_infos.len() {
       None
     } else {
@@ -146,14 +133,21 @@ impl PackageDownloadClient {
   // Get `InRelease` and update each sources should download `Packages` files.
   // If all downloads are complete, returns Ok(None).
   pub fn get_package_ifneed(&mut self) -> Result<Option<String>, DownloadError> {
-    // increment `self.cur_packages` til finding not-check Source.
-    self.increment_packages_counter();
     if self.cur_packages >= self.source_infos.len() {
       return Ok(None);
     }
 
+    // if there is no need to download `Packages`, read local DB cache.
     let source = &self.source_infos[self.cur_packages].source;
+    let should_update = self.source_infos[self.cur_packages].should_update.unwrap();
     self.cur_packages += 1;
+    if !should_update {
+      let package_client = crate::package::client::PackageClient::new(self.cache_dir.clone())?;
+      let packages_str = package_client.read_single_file_raw(&source.cache_filename())?;
+      return Ok(Some(packages_str));
+    }
+
+    // Actual download of `Packages`.
     let url = source.packages_url();
     let client = reqwest::blocking::Client::builder()
       .gzip(false)

@@ -1,0 +1,26 @@
+Package: 1
+Version: 2:8.1.2269-1ubuntu5
+Pre-Depends: 3
+Depends: 2
+Size: 1
+Filename: hoge
+Maintainer: a
+
+Package: 2
+Version: 2:8.1.2269-1ubuntu5
+Size: 1
+Filename: hoge
+Maintainer: a
+
+Package: 3
+Version: 2:8.1.2269-1ubuntu5
+Depends: 4
+Size: 1
+Filename: hoge
+Maintainer: a
+
+Package: 4
+Version: 2:8.1.2269-1ubuntu5
+Size: 1
+Filename: hoge
+Maintainer: a

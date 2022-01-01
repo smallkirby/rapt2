@@ -67,7 +67,7 @@ impl DpkgExtracter {
     if output.status.success() {
       Ok(())
     } else {
-      let errstr = String::from_utf8(output.stdout).unwrap();
+      let errstr = String::from_utf8(output.stderr).unwrap();
       Err(PackageError::InstallFailed {
         package_name: package.name.to_string(),
         errstr,

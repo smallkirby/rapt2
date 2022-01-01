@@ -22,4 +22,7 @@ pub enum RaptError {
 
   #[error("Invalid input: {msg:?}")]
   InvalidInput { msg: String },
+
+  #[error("Error while resolving dependency.")]
+  ImpossibleDependency(#[from] crate::algorithm::dag::DagError),
 }

@@ -80,6 +80,7 @@ pub fn package_list_test1() -> HashSet<Package> {
               version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
               operator: VersionCompOperator::EQ,
             }),
+            ..Default::default()
           }],
         },
         DependsAnyOf {
@@ -89,6 +90,7 @@ pub fn package_list_test1() -> HashSet<Package> {
               version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
               operator: VersionCompOperator::EQ,
             }),
+            ..Default::default()
           }],
         },
         DependsAnyOf {
@@ -98,6 +100,7 @@ pub fn package_list_test1() -> HashSet<Package> {
               version: Version::from("2.2.23").unwrap(),
               operator: VersionCompOperator::GE,
             }),
+            ..Default::default()
           }],
         },
       ],
@@ -124,6 +127,7 @@ pub fn package_list_test1() -> HashSet<Package> {
               version: Version::from("4:9.3.0-1ubuntu2").unwrap(),
               operator: VersionCompOperator::EQ,
             }),
+            ..Default::default()
           }],
         },
         DependsAnyOf {
@@ -133,6 +137,7 @@ pub fn package_list_test1() -> HashSet<Package> {
               version: Version::from("9.3.0-3~").unwrap(),
               operator: VersionCompOperator::GE,
             }),
+            ..Default::default()
           }],
         },
       ],

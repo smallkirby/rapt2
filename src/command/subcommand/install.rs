@@ -1,6 +1,6 @@
 use super::{super::error::RaptError, InstallArgs};
 use crate::{
-  algorithm::dag::sort_depends,
+  algorithm::dag::*,
   context::Context,
   dpkg::{
     client::{DpkgClient, StatusComp},
@@ -45,12 +45,16 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     return Ok(());
   }
 
-  let sorted_deps: Vec<PackageWithSource> =
-    sort_depends(deps, &keyword).into_iter().rev().collect();
-  let package_num = sorted_deps.len();
+  let sorted_deps: Vec<PackageWithSource> = sort_depends(deps, &keyword)?;
+  let layers = split_layers(&sorted_deps);
 
   // show info of packages
   show_to_install_packages(&sorted_deps, &keyword);
+
+  // if verbose mode, show dependencies.
+  if context.verbose {
+    show_deps_verbose(&layers);
+  }
 
   // if dry-run, return here
   if args.dry_run {
@@ -58,10 +62,6 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
       "{}  This is dry run, so actuall installation is not performed.",
       EMOJI_INFORMATION
     );
-    // if verbose mode, show dependencies.
-    if context.verbose {
-      show_deps_verbose(&sorted_deps);
-    }
     return Ok(());
   }
 
@@ -97,64 +97,60 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     style("[3/3]").bold().dim(),
     EMOJI_COMPUTER,
   );
-  let dpkg_client = DpkgInstaller::new(PathBuf::from(&context.archive_dir), sorted_deps)?;
-  {
-    // extract all packages
-    let prog_style = ProgressStyle::default_bar()
-      .template("   extract   {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-      .progress_chars("##-");
-    let progress = ProgressBar::new(package_num as u64);
-    progress.set_style(prog_style);
 
+  let prog_style = ProgressStyle::default_bar()
+    .template("   install   {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+    .progress_chars("##-");
+  let progress = ProgressBar::new(sorted_deps.len() as u64 * 2);
+  progress.set_style(prog_style);
+
+  for layer in layers.into_iter().rev() {
+    let dpkg_client = DpkgInstaller::new(
+      PathBuf::from(&context.archive_dir),
+      layer.into_iter().rev().collect(),
+    )?;
     for extracter in dpkg_client.extracters_iter() {
-      progress.set_message(format!("{}", &extracter.pws.package.name));
+      progress.set_message(extracter.pws.package.name.clone());
       extracter.execute()?;
       progress.inc(1);
     }
-    progress.abandon_with_message("Complete.");
-  }
-  {
-    // configure all packages
-    let prog_style = ProgressStyle::default_bar()
-      .template("   configure {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-      .progress_chars("##-");
-    let progress = ProgressBar::new(package_num as u64);
-    progress.set_style(prog_style);
-
     for configuer in dpkg_client.configuers_iter() {
-      progress.set_message(format!("{}", &configuer.pws.package.name));
+      progress.set_message(configuer.pws.package.name.clone());
       configuer.execute()?;
       progress.inc(1);
     }
-    progress.abandon_with_message("Complete.");
   }
+  progress.abandon_with_message("Complete.");
 
   Ok(())
 }
 
-fn show_deps_verbose(sorted_deps: &Vec<PackageWithSource>) {
+fn show_deps_verbose(layers: &Vec<Vec<PackageWithSource>>) {
   println!(
     "\n{}",
-    style("Packages would be installed in below order:").dim()
+    style("Packages would be installed in below order of layers:").dim()
   );
-  for pws in sorted_deps {
-    let package = &pws.package;
-    print!("\t- {} -> ", style(&package.name).green().dim());
-    for dep in &package.depends {
-      let dep_str: Vec<String> = dep
-        .depends
-        .iter()
-        .map(|dep| {
-          if let Some(version) = &dep.version {
-            format!("{}({})", dep.package, version)
-          } else {
-            format!("{}(any)", dep.package)
-          }
-        })
-        .collect();
-      print!("{}, ", style(dep_str.join(" | ")).dim());
+  for (ix, layer) in layers.iter().rev().enumerate() {
+    println!(" {}", style(format!("Layer {}:", ix + 1)).dim().bold());
+    for pws in layer.iter().rev() {
+      let package = &pws.package;
+      print!("\t- {} -> ", style(&package.name).green().dim());
+      for dep in &package.depends {
+        let dep_str: Vec<String> = dep
+          .depends
+          .iter()
+          .map(|dep| {
+            if let Some(version) = &dep.version {
+              format!("{}({})", dep.package, version)
+            } else {
+              format!("{}(any)", dep.package)
+            }
+          })
+          .collect();
+        print!("{}, ", style(dep_str.join(" | ")).dim());
+      }
+      println!("");
     }
-    println!("");
   }
 }
 

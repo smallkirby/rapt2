@@ -88,10 +88,23 @@ pub enum EntryType {
   STATUS,
 }
 
+#[derive(Debug, Hash, PartialEq, Eq, Clone)]
+pub enum DepType {
+  Depends,
+  PreDepends,
+}
+
+impl Default for DepType {
+  fn default() -> Self {
+    Self::Depends
+  }
+}
+
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
 pub struct Depends {
   pub package: String,
   pub version: Option<VersionComp>,
+  pub dep_type: DepType,
 }
 
 #[derive(Debug, Default, Hash, PartialEq, Eq, Clone)]
@@ -101,7 +114,7 @@ pub struct DependsAnyOf {
 
 impl DependsAnyOf {
   #[allow(clippy::result_unit_err)]
-  pub fn from(s: &str) -> Result<Vec<Self>, ()> {
+  pub fn from(s: &str, dep_type: DepType) -> Result<Vec<Self>, ()> {
     let mut results: Vec<Self> = vec![];
     let parts: Vec<&str> = s.trim().split(", ").collect();
 
@@ -121,6 +134,7 @@ impl DependsAnyOf {
             let depends = Depends {
               package: package_name.into(),
               version: Some(VersionComp::from(version_str_tmp).unwrap()),
+              dep_type: dep_type.clone(),
             };
             any_of.push(depends);
           }
@@ -128,6 +142,7 @@ impl DependsAnyOf {
             let depends = Depends {
               package: or_part.trim().into(),
               version: None,
+              dep_type: dep_type.clone(),
             };
             any_of.push(depends);
           }

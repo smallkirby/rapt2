@@ -2,7 +2,11 @@ extern crate rapt2;
 
 mod helper;
 
-use rapt2::{algorithm::dag::sort_depends, package::client::PackageClient, source::source::*};
+use rapt2::{
+  algorithm::dag::{sort_depends, split_layers},
+  package::client::PackageClient,
+  source::source::*,
+};
 
 use std::path::PathBuf;
 
@@ -43,7 +47,7 @@ fn test_resolve_deps() {
   }
 
   // check if deps are correctly resolved using topological sort
-  let sorted_deps = sort_depends(deps, "0");
+  let sorted_deps = sort_depends(deps, "0").unwrap();
   assert_eq!(10, sorted_deps.len());
 
   // order of nodes in the same group is undefined.
@@ -69,4 +73,24 @@ fn test_resolve_deps() {
     .collect();
   let group6_answers: Vec<String> = (8..=9).into_iter().map(|n| n.to_string()).collect();
   assert_eq!(true, group6.iter().all(|g| group6_answers.contains(g)));
+}
+
+#[test]
+fn test_predeps() {
+  let source = Source {
+    archive_type: ArchivedType::DEB,
+    url: "http://test4".into(),
+    distro: "/".into(),
+    component: Component::NULL,
+  };
+  let client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
+  let deps = client
+    .get_package_with_deps("1", &vec![source], true, None)
+    .unwrap();
+
+  let sorted_deps = sort_depends(deps.clone(), "1").unwrap();
+  let layers = split_layers(&sorted_deps);
+  assert_eq!(layers.len(), 2);
+  assert_eq!(layers[0].len(), 2);
+  assert_eq!(layers[1].len(), 2);
 }

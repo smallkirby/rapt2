@@ -90,7 +90,12 @@ fn parse_entry(content: &str, entry_type: EntryType) -> Result<Package, PackageE
       "conffiles" => {
         parsing_conffile = true;
       }
-      "depends" => package.depends = DependsAnyOf::from(&ent).unwrap(),
+      "depends" => package
+        .depends
+        .extend(DependsAnyOf::from(&ent, DepType::Depends).unwrap()),
+      "pre-depends" => package
+        .depends
+        .extend(DependsAnyOf::from(&ent, DepType::PreDepends).unwrap()),
       "status" => package.status = Some(DpkgStatusArea::from(&ent)),
       "files" | "checksums-sha1" | "checksums-sha256" | "package-list" => parsing_unknown = true,
       _ => continue,
@@ -193,6 +198,7 @@ mod tests {
               version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
               operator: version::VersionCompOperator::EQ,
             }),
+            dep_type: DepType::Depends,
           }],
         },
         DependsAnyOf {
@@ -202,6 +208,7 @@ mod tests {
               version: Version::from("2:8.1.2269-1ubuntu5").unwrap(),
               operator: version::VersionCompOperator::EQ,
             }),
+            dep_type: DepType::Depends,
           }],
         },
         DependsAnyOf {
@@ -211,6 +218,7 @@ mod tests {
               version: Version::from("2.2.23").unwrap(),
               operator: version::VersionCompOperator::GE,
             }),
+            dep_type: DepType::Depends,
           }],
         },
       ],

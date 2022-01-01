@@ -38,8 +38,15 @@ use thiserror::Error;
 pub enum DagError {
   #[error("Function is called with invalid Graph state.")]
   InvalidStateError,
+
+  #[error("Failed to resolve pre-dependencies.")]
+  FailedToResolve {
+    pre_depended_on: String,
+    pre_depending: String,
+  },
 }
 
+#[derive(Debug)]
 struct PackageNode {
   pub package: Package,
   pub to: Vec<usize>,
@@ -266,13 +273,97 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
   })
 }
 
+// Check if pre-depended-on packages are placed after pre-depending packages.
+fn sanity_check(deps: &Vec<PackageWithSource>) -> Result<(), DagError> {
+  for (ix, package) in deps.iter().enumerate() {
+    let depended_ons: Vec<&DependsAnyOf> = package
+      .package
+      .depends
+      .iter()
+      .filter(|anyof| anyof.depends[0].dep_type == DepType::PreDepends)
+      .collect();
+    for depended_on in depended_ons {
+      if let Some(depended_on_ix) = deps
+        .iter()
+        .position(|pws| pws.package.name == depended_on.depends[0].package)
+      {
+        if depended_on_ix < ix {
+          return Err(DagError::FailedToResolve {
+            pre_depended_on: depended_on.depends[0].package.to_string(),
+            pre_depending: package.package.name.to_string(),
+          });
+        }
+      }
+    }
+  }
+
+  Ok(())
+}
+
+fn remove_normal_deps(packages: &mut Vec<Package>) {
+  for ix in 0..packages.len() {
+    let mut target_jx = vec![];
+    for jx in 0..packages[ix].depends.len() {
+      if packages[ix].depends[jx].depends[0].dep_type == DepType::Depends {
+        target_jx.push(jx);
+      }
+    }
+    for jx in target_jx.into_iter().rev() {
+      packages[ix].depends.remove(jx);
+    }
+  }
+}
+
+// sort nodes in the same group respecting `Pre-Depends` dependency.
+fn force_predepends_same_group(nodes: &mut Vec<&PackageNode>) {
+  let mut orders = vec![];
+  for (ix, node) in nodes.iter().enumerate() {
+    if orders.contains(&ix) {
+      continue;
+    }
+    for anyof in &node.package.depends {
+      if anyof.depends[0].dep_type != DepType::PreDepends {
+        continue;
+      }
+      // if the node has pre-depends in the same group, place pre-depended-on node after pre-depending node.
+      match nodes
+        .iter()
+        .position(|node| node.package.name == anyof.depends[0].package)
+      {
+        Some(jx) => orders.push(jx),
+        None => {}
+      }
+    }
+
+    let tmp = orders.clone();
+    orders = vec![ix];
+    orders.extend(tmp);
+  }
+
+  let mut results = vec![];
+  for order in orders {
+    results.push(nodes[order].clone());
+  }
+
+  nodes.clear();
+  nodes.extend(results);
+}
+
 // Sort packages dependencies in topological way.
 // NOTE: Caller must ensure that all necessary packages are included in `deps`.
 //      If depended-on package is not found in `deps`, this function just ignores it.
 //      (cuz it would happen when already-installed packages are removed from `deps`.)
 // NOTE: result is returned in reversed-order of deps.
-pub fn sort_depends(deps: HashSet<PackageWithSource>, target_name: &str) -> Vec<PackageWithSource> {
-  let packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
+fn sort_depends_internal(
+  deps: HashSet<PackageWithSource>,
+  target_name: &str,
+  dep_type: DepType,
+) -> Result<Vec<PackageWithSource>, DagError> {
+  let mut packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
+  if dep_type == DepType::PreDepends {
+    // remove all normal `Depends`.
+    remove_normal_deps(&mut packages);
+  }
   let mut graph = Graph::from(packages).unwrap();
 
   // do SCC to make a DAG and do topological sort
@@ -300,11 +391,12 @@ pub fn sort_depends(deps: HashSet<PackageWithSource>, target_name: &str) -> Vec<
       // ignore the group including target package
       continue;
     }
-    let nodes: Vec<&PackageNode> = graph
+    let mut nodes: Vec<&PackageNode> = graph
       .nodes
       .iter()
       .filter(|node| node.group == group_id as i64)
       .collect();
+    force_predepends_same_group(&mut nodes);
 
     // XXX In the same group, push nodes in arbitrary order
     for node in nodes {
@@ -336,10 +428,104 @@ pub fn sort_depends(deps: HashSet<PackageWithSource>, target_name: &str) -> Vec<
     }
   }
 
-  vec![target_results, results]
+  let sorted_deps = vec![target_results, results]
     .into_iter()
     .flatten()
-    .collect()
+    .collect();
+  if dep_type == DepType::PreDepends {
+    sanity_check(&sorted_deps)?;
+  }
+  Ok(sorted_deps)
+}
+
+pub fn sort_depends(
+  deps: HashSet<PackageWithSource>,
+  target_name: &str,
+) -> Result<Vec<PackageWithSource>, DagError> {
+  sort_depends_internal(deps, target_name, DepType::Depends)
+}
+
+pub fn sort_pre_depends(
+  deps: HashSet<PackageWithSource>,
+  target_name: &str,
+) -> Result<Vec<PackageWithSource>, DagError> {
+  sort_depends_internal(deps, target_name, DepType::PreDepends)
+}
+
+pub fn devide_pre_dependedon(
+  packages: &Vec<PackageWithSource>,
+) -> (Vec<PackageWithSource>, Vec<PackageWithSource>) {
+  let mut pres = vec![];
+
+  // enumerate pre-depended-on packages
+  for pws in packages {
+    for dep in &pws.package.depends {
+      if dep.depends[0].dep_type == DepType::PreDepends {
+        match packages
+          .iter()
+          .position(|pws| pws.package.name == dep.depends[0].package)
+        {
+          Some(depended_on_ix) => {
+            if !pres.contains(&depended_on_ix) {
+              pres.push(depended_on_ix);
+            }
+          }
+          None => {}
+        }
+      }
+    }
+  }
+
+  let mut depended_ons = vec![];
+  let mut remaining = vec![];
+
+  for ix in 0..packages.len() {
+    if pres.contains(&ix) {
+      depended_ons.push(packages[ix].clone());
+    } else {
+      remaining.push(packages[ix].clone());
+    }
+  }
+
+  (depended_ons, remaining)
+}
+
+// Returns layered packages.
+// Packages in the same group should be extracted and configured in this order.
+// NOTE: argument `pwss` must be in topological order, before reversed.
+pub fn split_layers(pwss: &Vec<PackageWithSource>) -> Vec<Vec<PackageWithSource>> {
+  let mut layers = vec![];
+
+  let mut depended_on_ixs = vec![];
+  for pws in pwss.iter() {
+    let package = &pws.package;
+    for anyof in &package.depends {
+      if anyof.depends[0].dep_type == DepType::PreDepends {
+        if let Some(target) = pwss
+          .iter()
+          .position(|pws| pws.package.name == anyof.depends[0].package)
+        {
+          depended_on_ixs.push(target);
+        }
+      }
+    }
+  }
+
+  let mut cur = vec![];
+  for (ix, pws) in pwss.iter().enumerate() {
+    if depended_on_ixs.contains(&ix) {
+      layers.push(cur.clone());
+      cur.clear();
+      cur.push(pws.clone());
+    } else {
+      cur.push(pws.clone());
+    }
+  }
+  if !cur.is_empty() {
+    layers.push(cur);
+  }
+
+  layers
 }
 
 #[cfg(test)]
@@ -354,7 +540,7 @@ mod tests {
       let dep_strings: Vec<String> = current_tos.iter().map(|to| to.to_string()).collect();
       let package = Package {
         name: ix.to_string(),
-        depends: DependsAnyOf::from(&dep_strings.join(", ")).unwrap(),
+        depends: DependsAnyOf::from(&dep_strings.join(", "), DepType::Depends).unwrap(),
         ..Default::default()
       };
       packages.push(package);

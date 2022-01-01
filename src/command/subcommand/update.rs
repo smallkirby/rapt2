@@ -17,18 +17,15 @@ use crate::{
 
 use console::style;
 use std::collections::HashSet;
-use std::fs::File;
-use std::thread;
-use std::time::Duration;
 
 pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   // acquire lock
-  let lock = acquire_lock_blocking(context)?;
+  let lock = acquire_lock_blocking_pretty(context)?;
 
   // get list of sources
   println!(
     "{} {} Reading source lists...",
-    style("[1/3]").bold().dim(),
+    style("[1/4]").bold().dim(),
     EMOJI_BOOKS,
   );
   let source_client = SourceClient::new(context.source_dir.clone())?;
@@ -116,7 +113,7 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
       };
       println!(
         "\t- {} ({} -> {})",
-        style(package.package.name).dim(),
+        style(package.package.name).yellow(),
         style(package.package.version.to_string()).dim(),
         style(new_version).dim(),
       );
@@ -124,27 +121,4 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   }
 
   Ok(())
-}
-
-fn acquire_lock_blocking(context: &Context) -> Result<File, RaptError> {
-  match try_lock_file(context.lists_lock.clone(), true) {
-    Ok(file) => Ok(file),
-    Err(err) => match err {
-      FileLockError::LockAcquireFailed => {
-        let pb = create_long_spinner(format!("{} Waiting lock is acquired ", EMOJI_LOCK));
-        let mut result = try_lock_file(context.lists_lock.clone(), true);
-        while result.is_err() {
-          result = try_lock_file(context.lists_lock.clone(), true);
-          thread::sleep(Duration::from_millis(1));
-        }
-        pb.finish_with_message("DONE");
-        Ok(result.unwrap())
-      }
-      FileLockError::FileOperationError { operation } => {
-        eprintln!("Operation failed: {}", operation);
-        Err(RaptError::PermissionDenied)
-      }
-      err => unimplemented!("{}", err),
-    },
-  }
 }

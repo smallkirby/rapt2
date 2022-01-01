@@ -77,12 +77,14 @@ impl Graph {
   }
 
   // way-nome indexed DFS
-  pub fn dfs_all(&mut self) {
-    for ix in 0..self.nodes.len() {
-      if self.nodes[ix].normal_index == -1 {
-        self.dfs_internal(ix);
-      }
-    }
+  pub fn dfs_root(&mut self, root: &str) {
+    // do DFS once starting from root node
+    let root_ix = self
+      .nodes
+      .iter()
+      .position(|node| node.package.name == root)
+      .unwrap();
+    self.dfs_internal(root_ix);
   }
 
   fn dfs_internal(&mut self, start: usize) {
@@ -99,7 +101,8 @@ impl Graph {
 
   // way-nome indexed reverse DFS
   fn rev_dfs_grouping(&mut self, start: usize) {
-    if self.nodes[start].visited {
+    // ignore already-visited nodes and unreachable nodes from root node
+    if self.nodes[start].visited || self.nodes[start].normal_index == -1 {
       return;
     }
     self.nodes[start].visited = true;
@@ -116,24 +119,26 @@ impl Graph {
   }
 
   // Decomposition of Strongly Connected Components, to create DAG.
-  fn scc(&mut self) -> Result<(), DagError> {
+  fn scc(&mut self, root: &str) -> Result<(), DagError> {
     self.clear_visited();
     self.check_before_scc_valid()?;
 
     // first, DFS in home-way order
-    self.dfs_all();
+    // NOTE: `node.normal_index` remains -1 if the node is unreachable from root node.
+    self.dfs_root(root);
 
-    // second, reverse DFS and make groups
+    // second, reverse DFS and make groups (just ignore unreachable node)
     self.clear_visited();
     for ix in (0..self.nodes.len()).rev() {
-      let node_ix = self
+      if let Some(node_ix) = self
         .nodes
         .iter()
         .position(|node| node.normal_index == ix as i64)
-        .unwrap();
-      if self.nodes[node_ix].group == -1 {
-        self.rev_dfs_grouping(node_ix);
-        self.group_num += 1;
+      {
+        if self.nodes[node_ix].group == -1 {
+          self.rev_dfs_grouping(node_ix);
+          self.group_num += 1;
+        }
       }
     }
 
@@ -212,13 +217,6 @@ impl Graph {
     }
 
     self.simplified_nodes = result;
-  }
-
-  #[allow(dead_code)]
-  pub fn debug_print_dfs_order(&self) {
-    for (ix, node) in self.nodes.iter().enumerate() {
-      println!("{}: {}", ix, node.normal_index);
-    }
   }
 }
 
@@ -356,9 +354,10 @@ fn force_predepends_same_group(nodes: &mut Vec<&PackageNode>) {
 //      If depended-on package is not found in `deps`, this function just ignores it.
 //      (cuz it would happen when already-installed packages are removed from `deps`.)
 // NOTE: result is returned in reversed-order of deps.
+// NOTE: if there are unreachable nodes from `root` node, these nodes are omitted in returned vec.
 fn sort_depends_internal(
   deps: HashSet<PackageWithSource>,
-  target_name: &str,
+  root: &str,
   dep_type: DepType,
 ) -> Result<Vec<PackageWithSource>, DagError> {
   let mut packages: Vec<Package> = deps.iter().map(|pws| pws.package.clone()).collect();
@@ -369,7 +368,7 @@ fn sort_depends_internal(
   let mut graph = Graph::from(packages).unwrap();
 
   // do SCC to make a DAG and do topological sort
-  graph.scc().unwrap();
+  graph.scc(root).unwrap();
   graph.topological_sort();
 
   let mut results = vec![];
@@ -380,7 +379,7 @@ fn sort_depends_internal(
   let target_group = graph
     .nodes
     .iter()
-    .find(|node| node.package.name == target_name)
+    .find(|node| node.package.name == root)
     .unwrap()
     .group;
 
@@ -402,6 +401,10 @@ fn sort_depends_internal(
 
     // XXX In the same group, push nodes in arbitrary order
     for node in nodes {
+      // remove unreachable nodes from root node
+      if node.normal_index == -1 {
+        continue;
+      }
       // combine with source information
       let pws = deps
         .iter()
@@ -421,7 +424,7 @@ fn sort_depends_internal(
       .unwrap()
       .clone();
     // if node is target package itself, add it at the end.
-    if pws.package.name == target_name {
+    if pws.package.name == root {
       let tmp = target_results.clone();
       target_results = vec![pws];
       target_results.extend(tmp);
@@ -442,9 +445,9 @@ fn sort_depends_internal(
 
 pub fn sort_depends(
   deps: HashSet<PackageWithSource>,
-  target_name: &str,
+  root: &str,
 ) -> Result<Vec<PackageWithSource>, DagError> {
-  sort_depends_internal(deps, target_name, DepType::Depends)
+  sort_depends_internal(deps, root, DepType::Depends)
 }
 
 // Returns layered packages.
@@ -537,10 +540,10 @@ mod tests {
     let mut graph = Graph::from(packages).unwrap();
     let order = vec![3, 1, 2, 0];
 
-    graph.dfs_all();
+    graph.dfs_root("0");
     assert_eq!(to_orders(&graph), order);
 
-    assert_eq!(graph.scc().is_err(), true);
+    assert_eq!(graph.scc("0").is_err(), true);
   }
 
   #[test]
@@ -584,7 +587,7 @@ mod tests {
     answer_groups.insert(5, vec![7]);
     answer_groups.insert(6, vec![8, 9]);
 
-    graph.scc().unwrap();
+    graph.scc("0").unwrap();
     let groups = to_groups(&graph);
     assert_eq!(groups, answer_groups);
 

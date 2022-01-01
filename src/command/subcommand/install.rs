@@ -14,7 +14,6 @@ use crate::{
 
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
 
 pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
@@ -66,7 +65,7 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   }
 
   // ask users again to install or not
-  if !confirm_user_yesno() {
+  if !confirm_user_yesno("Do you really install them?") {
     return Ok(());
   }
 
@@ -125,35 +124,6 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   Ok(())
 }
 
-fn show_deps_verbose(layers: &[Vec<PackageWithSource>]) {
-  println!(
-    "\n{}",
-    style("Packages would be installed in below order of layers:").dim()
-  );
-  for (ix, layer) in layers.iter().rev().enumerate() {
-    println!(" {}", style(format!("Layer {}:", ix + 1)).dim().bold());
-    for pws in layer.iter().rev() {
-      let package = &pws.package;
-      print!("\t- {} -> ", style(&package.name).green().dim());
-      for dep in &package.depends {
-        let dep_str: Vec<String> = dep
-          .depends
-          .iter()
-          .map(|dep| {
-            if let Some(version) = &dep.version {
-              format!("{}({})", dep.package, version)
-            } else {
-              format!("{}(any)", dep.package)
-            }
-          })
-          .collect();
-        print!("{}, ", style(dep_str.join(" | ")).dim());
-      }
-      println!();
-    }
-  }
-}
-
 fn show_to_install_packages(pwss: &[PackageWithSource], target: &str) {
   println!(
     "Below packages are to be installed({}):",
@@ -208,13 +178,4 @@ fn show_to_install_packages(pwss: &[PackageWithSource], target: &str) {
       ),
     }
   }
-}
-
-fn confirm_user_yesno() -> bool {
-  let mut s = String::new();
-  print!("Do you really install them? [yN] > ");
-  stdout().flush().unwrap();
-  stdin().read_line(&mut s).expect("Invalid input");
-
-  s.to_lowercase().starts_with('y')
 }

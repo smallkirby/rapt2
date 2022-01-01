@@ -4,6 +4,7 @@ pub mod dep;
 pub mod install;
 pub mod list;
 pub mod update;
+pub mod upgrade;
 
 #[derive(Debug, Subcommand)]
 pub enum SubCommand {
@@ -12,8 +13,11 @@ pub enum SubCommand {
     #[clap(flatten)]
     args: UpdateArgs,
   },
-  #[clap(about = "(not implemented)")]
-  UPGRADE,
+  #[clap(about = "Install newer version of packages.")]
+  UPGRADE {
+    #[clap(flatten)]
+    args: UpgradeArgs,
+  },
   #[clap(about = "Install packages")]
   INSTALL {
     #[clap(flatten)]
@@ -41,6 +45,9 @@ pub enum SubCommand {
 
 #[derive(Args, Debug)]
 pub struct UpdateArgs {}
+
+#[derive(Args, Debug)]
+pub struct UpgradeArgs {}
 
 #[derive(Args, Debug)]
 pub struct ListArgs {

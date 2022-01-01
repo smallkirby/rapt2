@@ -2,11 +2,19 @@
  This file implements misc helper functions.
 */
 
+use crate::package::client::PackageWithSource;
+use crate::package::package::DepType;
+use crate::{command::error::RaptError, context::Context};
+
 use chrono::{DateTime, NaiveDateTime, Utc};
+use console::style;
 use fs2::FileExt;
 use indicatif::{ProgressBar, ProgressStyle};
-use std::fs;
+use std::fs::{self, File};
+use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
+use std::thread;
+use std::time::Duration;
 use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 use users::get_current_uid;
@@ -158,4 +166,74 @@ pub fn default_progbar(len: u64) -> ProgressBar {
   progress.set_style(prog_style);
 
   progress
+}
+
+pub fn confirm_user_yesno(msg: &str) -> bool {
+  let mut s = String::new();
+  print!("{} [yN] > ", msg);
+  stdout().flush().unwrap();
+  stdin().read_line(&mut s).expect("Invalid input");
+
+  s.to_lowercase().starts_with('y')
+}
+
+pub fn acquire_lock_blocking_pretty(context: &Context) -> Result<File, RaptError> {
+  match try_lock_file(context.lists_lock.clone(), true) {
+    Ok(file) => Ok(file),
+    Err(err) => match err {
+      FileLockError::LockAcquireFailed => {
+        let pb = create_long_spinner(format!("{} Waiting lock is acquired ", emoji::EMOJI_LOCK));
+        let mut result = try_lock_file(context.lists_lock.clone(), true);
+        while result.is_err() {
+          result = try_lock_file(context.lists_lock.clone(), true);
+          thread::sleep(Duration::from_millis(1));
+        }
+        pb.finish_with_message("DONE");
+        Ok(result.unwrap())
+      }
+      FileLockError::FileOperationError { operation } => {
+        eprintln!("Operation failed: {}", operation);
+        Err(RaptError::PermissionDenied)
+      }
+      err => unimplemented!("{}", err),
+    },
+  }
+}
+
+pub fn show_deps_verbose(layers: &[Vec<PackageWithSource>]) {
+  println!(
+    "\n{}",
+    style("Packages would be installed in below order of layers:").dim()
+  );
+  for (ix, layer) in layers.iter().rev().enumerate() {
+    println!(" {}", style(format!("Layer {}:", ix + 1)).dim().bold());
+    for pws in layer.iter().rev() {
+      let package = &pws.package;
+      print!("\t- {} -> ", style(&package.name).green().dim());
+      for dep in &package.depends {
+        let dep_str: Vec<String> = dep
+          .depends
+          .iter()
+          .map(|dep| {
+            if let Some(version) = &dep.version {
+              format!(
+                "{}({}{})",
+                dep.package,
+                version,
+                if dep.dep_type == DepType::PreDepends {
+                  " PRE"
+                } else {
+                  ""
+                }
+              )
+            } else {
+              format!("{}(any)", dep.package)
+            }
+          })
+          .collect();
+        print!("{}, ", style(dep_str.join(" | ")).dim());
+      }
+      println!();
+    }
+  }
 }

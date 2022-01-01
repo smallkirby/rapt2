@@ -3,14 +3,12 @@
 */
 
 use super::{super::error::RaptError, ListArgs};
-use crate::{context::Context, package::client::PackageClient, source::client::SourceClient};
+use crate::{
+  context::Context, package::client::PackageClient, source::client::SourceClient, util::emoji::*,
+};
 
-use console::{style, Emoji};
+use console::style;
 use std::path::PathBuf;
-
-static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
-static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
-static EMOJI_CROSS: Emoji<'_, '_> = Emoji("❌", "");
 
 pub fn execute(context: &Context, args: &ListArgs) -> Result<(), RaptError> {
   let keyword = args.keyword.clone();

@@ -9,19 +9,13 @@ use crate::{
   net::binary::BinaryDownloader,
   package::client::{PackageClient, PackageWithSource},
   source::client::SourceClient,
+  util::emoji::*,
 };
 
-use console::{style, Emoji};
+use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::io::{stdin, stdout, Write};
 use std::path::PathBuf;
-
-static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
-static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
-static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
-static EMOJI_COMPUTER: Emoji<'_, '_> = Emoji("💻", "");
-static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");
-static EMOJI_TARGET: Emoji<'_, '_> = Emoji("🎯", "");
 
 pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   let keyword = args.keyword.clone();

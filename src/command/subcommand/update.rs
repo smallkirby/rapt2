@@ -12,22 +12,15 @@ use crate::{
     client::SourceClient,
     source::{ArchivedType, Source},
   },
-  util::*,
+  util::{emoji::*, *},
 };
 
-use console::{style, Emoji};
+use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 use std::fs::File;
 use std::thread;
 use std::time::Duration;
-
-static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
-static EMOJI_BOOKMARK: Emoji<'_, '_> = Emoji("🔖", "");
-static EMOJI_GLASS: Emoji<'_, '_> = Emoji("🔍", "");
-static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
-static EMOJI_EXC: Emoji<'_, '_> = Emoji("❗", "");
-static EMOJI_LOCK: Emoji<'_, '_> = Emoji("🔐", "");
 
 pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   // acquire lock

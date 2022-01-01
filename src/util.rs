@@ -11,6 +11,23 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use thiserror::Error;
 use users::get_current_uid;
 
+pub mod emoji {
+  use console::Emoji;
+
+  pub static EMOJI_BOOKS: Emoji<'_, '_> = Emoji("📚", "");
+  pub static EMOJI_BOOKMARK: Emoji<'_, '_> = Emoji("🔖", "");
+  pub static EMOJI_GLASS: Emoji<'_, '_> = Emoji("🔍", "");
+  pub static EMOJI_SPARKLES: Emoji<'_, '_> = Emoji("✨", "");
+  pub static EMOJI_EXC: Emoji<'_, '_> = Emoji("❗", "");
+  pub static EMOJI_LOCK: Emoji<'_, '_> = Emoji("🔐", "");
+  pub static EMOJI_CROSS: Emoji<'_, '_> = Emoji("❌", "");
+  pub static EMOJI_DOWN: Emoji<'_, '_> = Emoji("⬇️", "");
+  pub static EMOJI_TARGET: Emoji<'_, '_> = Emoji("🎯", "");
+  pub static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
+  pub static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");
+  pub static EMOJI_COMPUTER: Emoji<'_, '_> = Emoji("💻", "");
+}
+
 pub fn split_by_empty_line(s: &str) -> Vec<Vec<String>> {
   let mut result = vec![];
   let mut acc = vec![];

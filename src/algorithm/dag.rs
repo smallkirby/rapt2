@@ -46,7 +46,6 @@ pub enum DagError {
   },
 }
 
-#[derive(Debug)]
 struct PackageNode {
   pub package: Package,
   pub to: Vec<usize>,
@@ -146,7 +145,7 @@ impl Graph {
     let packages_state_valid = self
       .nodes
       .iter()
-      .all(|node| node.normal_index == -1 && node.group == -1 && node.visited == false);
+      .all(|node| node.normal_index == -1 && node.group == -1 && !node.visited);
 
     if graph_state_valid && packages_state_valid {
       Ok(())
@@ -203,7 +202,7 @@ impl Graph {
       };
       for node in nodes {
         for to in &node.to {
-          let to_group = self.nodes[to.clone()].group;
+          let to_group = self.nodes[*to].group;
           if to_group != group_id && !simple_node.to.contains(&to_group) {
             simple_node.to.push(to_group);
           }
@@ -274,8 +273,10 @@ fn construct_nodes(packages: Vec<Package>) -> Result<Graph, DagError> {
 }
 
 // Check if pre-depended-on packages are placed after pre-depending packages.
+#[allow(clippy::ptr_arg)]
 fn sanity_check(deps: &Vec<PackageWithSource>) -> Result<(), DagError> {
   for (ix, package) in deps.iter().enumerate() {
+    #[allow(clippy::ptr_arg)]
     let depended_ons: Vec<&DependsAnyOf> = package
       .package
       .depends
@@ -301,6 +302,7 @@ fn sanity_check(deps: &Vec<PackageWithSource>) -> Result<(), DagError> {
 }
 
 fn remove_normal_deps(packages: &mut Vec<Package>) {
+  #[allow(clippy::needless_range_loop)]
   for ix in 0..packages.len() {
     let mut target_jx = vec![];
     for jx in 0..packages[ix].depends.len() {
@@ -326,12 +328,11 @@ fn force_predepends_same_group(nodes: &mut Vec<&PackageNode>) {
         continue;
       }
       // if the node has pre-depends in the same group, place pre-depended-on node after pre-depending node.
-      match nodes
+      if let Some(jx) = nodes
         .iter()
         .position(|node| node.package.name == anyof.depends[0].package)
       {
-        Some(jx) => orders.push(jx),
-        None => {}
+        orders.push(jx);
       }
     }
 
@@ -342,6 +343,7 @@ fn force_predepends_same_group(nodes: &mut Vec<&PackageNode>) {
 
   let mut results = vec![];
   for order in orders {
+    #[allow(clippy::clone_double_ref)]
     results.push(nodes[order].clone());
   }
 
@@ -385,7 +387,7 @@ fn sort_depends_internal(
   for group_order in 0..group_orders.len() {
     let group_id = group_orders
       .iter()
-      .position(|i| i.clone() == group_order as i64)
+      .position(|i| *i == group_order as i64)
       .unwrap();
     if group_id as i64 == target_group {
       // ignore the group including target package
@@ -445,55 +447,10 @@ pub fn sort_depends(
   sort_depends_internal(deps, target_name, DepType::Depends)
 }
 
-pub fn sort_pre_depends(
-  deps: HashSet<PackageWithSource>,
-  target_name: &str,
-) -> Result<Vec<PackageWithSource>, DagError> {
-  sort_depends_internal(deps, target_name, DepType::PreDepends)
-}
-
-pub fn devide_pre_dependedon(
-  packages: &Vec<PackageWithSource>,
-) -> (Vec<PackageWithSource>, Vec<PackageWithSource>) {
-  let mut pres = vec![];
-
-  // enumerate pre-depended-on packages
-  for pws in packages {
-    for dep in &pws.package.depends {
-      if dep.depends[0].dep_type == DepType::PreDepends {
-        match packages
-          .iter()
-          .position(|pws| pws.package.name == dep.depends[0].package)
-        {
-          Some(depended_on_ix) => {
-            if !pres.contains(&depended_on_ix) {
-              pres.push(depended_on_ix);
-            }
-          }
-          None => {}
-        }
-      }
-    }
-  }
-
-  let mut depended_ons = vec![];
-  let mut remaining = vec![];
-
-  for ix in 0..packages.len() {
-    if pres.contains(&ix) {
-      depended_ons.push(packages[ix].clone());
-    } else {
-      remaining.push(packages[ix].clone());
-    }
-  }
-
-  (depended_ons, remaining)
-}
-
 // Returns layered packages.
 // Packages in the same group should be extracted and configured in this order.
 // NOTE: argument `pwss` must be in topological order, before reversed.
-pub fn split_layers(pwss: &Vec<PackageWithSource>) -> Vec<Vec<PackageWithSource>> {
+pub fn split_layers(pwss: &[PackageWithSource]) -> Vec<Vec<PackageWithSource>> {
   let mut layers = vec![];
 
   let mut depended_on_ixs = vec![];

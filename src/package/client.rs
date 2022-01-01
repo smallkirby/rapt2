@@ -55,10 +55,7 @@ impl PackageClient {
     Ok(content)
   }
 
-  pub fn read_all_from_source(
-    &self,
-    sources: &Vec<Source>,
-  ) -> Result<HashSet<Package>, PackageError> {
+  pub fn read_all_from_source(&self, sources: &[Source]) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
 
     for source in sources {
@@ -123,7 +120,7 @@ impl PackageClient {
 
   pub fn read_all_from_source_with_source(
     &self,
-    sources: &Vec<Source>,
+    sources: &[Source],
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
     let mut results: HashSet<PackageWithSource> = HashSet::new();
 
@@ -183,10 +180,10 @@ impl PackageClient {
   // Result is returned in flattened HashSet.
   pub fn get_package_with_deps(
     &self,
-    name: &str,                               // target package
-    sources: &Vec<Source>,                    // sources to search for packages
-    ignore_installed: bool,                   // ignore already installed packages
-    mut dpkg_client: Option<&mut DpkgClient>, // needed if `ignore_installed` is true
+    name: &str,                                      // target package
+    #[allow(clippy::ptr_arg)] sources: &Vec<Source>, // sources to search for packages
+    ignore_installed: bool,                          // ignore already installed packages
+    mut dpkg_client: Option<&mut DpkgClient>,        // needed if `ignore_installed` is true
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
     let pattern = glob::Pattern::new(name).unwrap();
     let packages_with_source = self.read_all_from_source_with_source(sources)?;
@@ -248,7 +245,7 @@ impl PackageClient {
       }
 
       let depended_on = match all_packages_ws
-        .into_iter()
+        .iter()
         .find(|pws| pws.package.name == dep.package)
       {
         Some(target) => {
@@ -293,7 +290,7 @@ impl PackageClient {
   }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Eq, Clone)]
 pub struct PackageWithSource {
   pub package: Package,
   pub source: Source,
@@ -304,6 +301,12 @@ pub struct PackageWithSource {
 impl std::hash::Hash for PackageWithSource {
   fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
     self.package.hash(state);
+  }
+}
+
+impl PartialEq for PackageWithSource {
+  fn eq(&self, other: &Self) -> bool {
+    self.package == other.package
   }
 }
 

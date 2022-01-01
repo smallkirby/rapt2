@@ -77,6 +77,16 @@ fn test_resolve_deps() {
 
 #[test]
 fn test_predeps() {
+  /*
+           strong
+   ┌─────────────────────┐
+   ├─────────────────────┤
+   │                     │
+   │                     │
+   │                     ▼
+   1────────►2          3 ────────► 4
+  */
+
   let source = Source {
     archive_type: ArchivedType::DEB,
     url: "http://test4".into(),
@@ -91,6 +101,13 @@ fn test_predeps() {
   let sorted_deps = sort_depends(deps.clone(), "1").unwrap();
   let layers = split_layers(&sorted_deps);
   assert_eq!(layers.len(), 2);
-  assert_eq!(layers[0].len(), 2);
-  assert_eq!(layers[1].len(), 2);
+  if layers[0].len() == 1 {
+    assert_eq!(layers[0][0].package.name, "1");
+    assert_eq!(layers[1][0].package.name, "3");
+  } else if layers[0].len() == 2 {
+    assert_eq!(layers[0][1].package.name, "2");
+    assert_eq!(layers[1][0].package.name, "3");
+  } else {
+    panic!();
+  }
 }

@@ -125,7 +125,7 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   Ok(())
 }
 
-fn show_deps_verbose(layers: &Vec<Vec<PackageWithSource>>) {
+fn show_deps_verbose(layers: &[Vec<PackageWithSource>]) {
   println!(
     "\n{}",
     style("Packages would be installed in below order of layers:").dim()
@@ -149,12 +149,12 @@ fn show_deps_verbose(layers: &Vec<Vec<PackageWithSource>>) {
           .collect();
         print!("{}, ", style(dep_str.join(" | ")).dim());
       }
-      println!("");
+      println!();
     }
   }
 }
 
-fn show_to_install_packages(pwss: &Vec<PackageWithSource>, target: &str) {
+fn show_to_install_packages(pwss: &[PackageWithSource], target: &str) {
   println!(
     "Below packages are to be installed({}):",
     style(pwss.len()).bold().cyan()
@@ -185,16 +185,7 @@ fn show_to_install_packages(pwss: &Vec<PackageWithSource>, target: &str) {
   // show upgraded packages.
   let upgrades: Vec<&PackageWithSource> = pwss
     .iter()
-    .filter(|pws| {
-      if let Some(status) = &pws.dpkg_status {
-        match status {
-          StatusComp::OLD(_) => true,
-          _ => false,
-        }
-      } else {
-        false
-      }
-    })
+    .filter(|pws| matches!(&pws.dpkg_status, Some(StatusComp::OLD(_))))
     .collect();
   println!(
     "  {} Upgraded({}):",
@@ -225,9 +216,5 @@ fn confirm_user_yesno() -> bool {
   stdout().flush().unwrap();
   stdin().read_line(&mut s).expect("Invalid input");
 
-  if s.to_lowercase().starts_with("y") {
-    true
-  } else {
-    false
-  }
+  s.to_lowercase().starts_with('y')
 }

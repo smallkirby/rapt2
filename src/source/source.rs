@@ -157,7 +157,7 @@ impl Source {
 
   pub fn inrelease_filename(&self) -> String {
     let text = String::from(self.inrelease_url().split("://").collect::<Vec<&str>>()[1]);
-    text.replace("/", "_").into()
+    text.replace("/", "_")
   }
 }
 

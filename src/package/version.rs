@@ -191,6 +191,7 @@ impl VersionComp {
     }
   }
 
+  #[allow(dead_code)]
   fn matches(&self, other: &Version) -> bool {
     use VersionCompOperator::*;
     match self.operator {

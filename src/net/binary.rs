@@ -45,7 +45,7 @@ impl BinaryDownloaderExecuter {
     let source = &self.pws.source;
     let url = format!("{}{}", source.url, package.filename);
     let builder = self.client.get(url);
-    let filename = package.filename.split("/").last().unwrap();
+    let filename = package.filename.split('/').last().unwrap();
     let filepath = self.cache_dir.join(filename);
 
     match builder.send() {

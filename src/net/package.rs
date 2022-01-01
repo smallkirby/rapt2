@@ -12,7 +12,7 @@ use reqwest::header::IF_MODIFIED_SINCE;
 use reqwest::StatusCode;
 use std::fs;
 use std::io::prelude::*;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 #[derive(Debug)]
@@ -56,10 +56,9 @@ impl PackageDownloadClient {
     // read `InRelease` caches and associate old MD5Sum hash with each source.
     for group in source_groups {
       let representative_source = &group[0];
-      let inrelease = match read_inrelease_cache(&representative_source, &cache_dir) {
+      let inrelease = match read_inrelease_cache(representative_source, &cache_dir) {
         Some(inrelease) => inrelease,
         None => {
-          drop(representative_source);
           for source in group {
             source_infos.push(SourceInfo {
               source,
@@ -70,7 +69,6 @@ impl PackageDownloadClient {
           continue;
         }
       };
-      drop(representative_source);
       for source in group {
         let search_string = format!("{}/binary-amd64/Packages.gz", source.component);
         let md5 = search_md5(&search_string, &inrelease);
@@ -292,7 +290,7 @@ impl PackageDownloadClient {
   }
 }
 
-fn read_inrelease_cache(source: &Source, cache_dir: &PathBuf) -> Option<String> {
+fn read_inrelease_cache(source: &Source, cache_dir: &Path) -> Option<String> {
   let filepathbuf = cache_dir.join(source.inrelease_filename());
   match fs::read_to_string(filepathbuf.as_path()) {
     Ok(s) => Some(s),
@@ -310,7 +308,7 @@ fn search_md5(target: &str, inrelease: &str) -> Option<String> {
   None
 }
 
-fn check_listdb_exists(package_cache_dir: &PathBuf, source: &Source) -> bool {
+fn check_listdb_exists(package_cache_dir: &Path, source: &Source) -> bool {
   let filepathbuf = package_cache_dir.join(source.cache_filename());
   filepathbuf.as_path().is_file()
 }

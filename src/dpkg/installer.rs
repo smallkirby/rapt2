@@ -40,17 +40,17 @@ impl Iterator for DpkgExtracterIter {
     }
     let ix = self.curr;
     self.curr += 1;
-    return Some(Self::Item {
+    Some(Self::Item {
       pws: self.pwss[ix].clone(),
       archive_dir: self.archive_dir.clone(),
-    });
+    })
   }
 }
 
 impl DpkgExtracter {
   pub fn execute(&self) -> Result<(), PackageError> {
     let package = &self.pws.package;
-    let archived_filename = package.filename.split("/").last().unwrap();
+    let archived_filename = package.filename.split('/').last().unwrap();
     let archived_path = self.archive_dir.join(archived_filename);
     let archived_fullname = archived_path.to_string_lossy().to_string();
 
@@ -85,9 +85,9 @@ impl Iterator for DpkgConfigurerIter {
     }
     let ix = self.curr;
     self.curr += 1;
-    return Some(Self::Item {
+    Some(Self::Item {
       pws: self.pwss[ix].clone(),
-    });
+    })
   }
 }
 

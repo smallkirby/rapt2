@@ -93,7 +93,7 @@ impl DpkgClient {
 
     // check its status by `/var/lib/dpkg/status`.
     for package in &installeds {
-      let candidate_new = match news.get(&package) {
+      let candidate_new = match news.get(package) {
         Some(candidate) => candidate,
         None => continue, // XXX installed, but no information in Packages files
       };

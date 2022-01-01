@@ -149,3 +149,13 @@ pub fn timestamp2ims(t: SystemTime) -> String {
   let utc: DateTime<Utc> = DateTime::from_utc(naive, Utc);
   utc.format("%a, %d %b %Y %H:%M:%S GMT").to_string()
 }
+
+pub fn default_progbar(len: u64) -> ProgressBar {
+  let prog_style = ProgressStyle::default_bar()
+    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+    .progress_chars("##-");
+  let progress = ProgressBar::new(len);
+  progress.set_style(prog_style);
+
+  progress
+}

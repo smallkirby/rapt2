@@ -9,7 +9,7 @@ use crate::{
   net::binary::BinaryDownloader,
   package::client::{PackageClient, PackageWithSource},
   source::client::SourceClient,
-  util::emoji::*,
+  util::{emoji::*, *},
 };
 
 use console::style;
@@ -76,11 +76,7 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     style("[2/3]").bold().dim(),
     EMOJI_EARTH,
   );
-  let prog_style = ProgressStyle::default_bar()
-    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-    .progress_chars("##-");
-  let progress = ProgressBar::new(sorted_deps.len() as u64);
-  progress.set_style(prog_style);
+  let progress = default_progbar(sorted_deps.len() as u64);
 
   let binary_client =
     BinaryDownloader::new(sorted_deps.clone(), PathBuf::from(&context.archive_dir))?;

@@ -16,7 +16,6 @@ use crate::{
 };
 
 use console::style;
-use indicatif::{ProgressBar, ProgressStyle};
 use std::collections::HashSet;
 use std::fs::File;
 use std::thread;
@@ -50,12 +49,7 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
     style("[2/4]").bold().dim(),
     EMOJI_BOOKMARK,
   );
-  let prog_style = ProgressStyle::default_bar()
-    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-    .progress_chars("##-");
-  let progress = ProgressBar::new(total_sources_num as u64);
-  progress.set_style(prog_style);
-
+  let progress = default_progbar(total_sources_num as u64);
   loop {
     progress.set_position(downloader.get_done_inrelease_num() as u64);
     match downloader.get_next_target_source_inrelease() {
@@ -74,12 +68,7 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
     style("[3/4]").bold().dim(),
     EMOJI_BOOKMARK,
   );
-  let prog_style = ProgressStyle::default_bar()
-    .template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
-    .progress_chars("##-");
-  let progress = ProgressBar::new(total_sources_num as u64);
-  progress.set_style(prog_style);
-
+  let progress = default_progbar(total_sources_num as u64);
   loop {
     progress.set_position(downloader.get_done_packages_num() as u64);
     match downloader.get_next_target_source_packages() {

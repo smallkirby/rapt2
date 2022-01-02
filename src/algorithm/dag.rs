@@ -185,7 +185,7 @@ impl Graph {
     self.simplified_nodes[start].visited = true;
 
     for jx in 0..self.simplified_nodes[start].to.len() {
-      self.topological_dfs(jx);
+      self.topological_dfs(self.simplified_nodes[start].to[jx] as usize);
     }
 
     self.topological_order[self.simplified_nodes[start].group as usize] = self.topological_count;
@@ -376,19 +376,15 @@ fn sort_depends_internal(
 
   // NOTE: if target package itself has circular dependencies,
   //      at least the target package should be installed at the end.
-  let target_group = graph
+  let target_group_id = graph
     .nodes
     .iter()
     .find(|node| node.package.name == root)
     .unwrap()
     .group;
 
-  for group_order in 0..group_orders.len() {
-    let group_id = group_orders
-      .iter()
-      .position(|i| *i == group_order as i64)
-      .unwrap();
-    if group_id as i64 == target_group {
+  for group_id in group_orders {
+    if group_id as i64 == target_group_id {
       // ignore the group including target package
       continue;
     }
@@ -414,10 +410,18 @@ fn sort_depends_internal(
       results.push(pws);
     }
   }
+  // left elements are more depended on by rights now.
+
+  results = results.into_iter().rev().collect();
+  // right elements are more depended on by rights now.
 
   // push nodes in target group
   let mut target_results: Vec<PackageWithSource> = vec![];
-  for node in graph.nodes.iter().filter(|node| node.group == target_group) {
+  for node in graph
+    .nodes
+    .iter()
+    .filter(|node| node.group == target_group_id)
+  {
     let pws = deps
       .iter()
       .find(|pws| pws.package == node.package)
@@ -491,6 +495,8 @@ pub fn split_layers(pwss: &[PackageWithSource]) -> Vec<Vec<PackageWithSource>> {
 #[cfg(test)]
 mod tests {
   use super::*;
+  use crate::source::source::{ArchivedType, Component, Source};
+
   use std::collections::HashMap;
 
   fn vec2packages(tos: Vec<Vec<u32>>) -> Vec<Package> {
@@ -591,8 +597,76 @@ mod tests {
     let groups = to_groups(&graph);
     assert_eq!(groups, answer_groups);
 
-    let topological_answer = vec![0, 1, 2, 3, 4, 5, 6];
+    let topological_answer: Vec<i64> = vec![0, 1, 2, 3, 4, 5, 6].into_iter().rev().collect();
     graph.topological_sort();
     assert_eq!(topological_answer, graph.topological_order);
+  }
+
+  fn depstr2packages(s: &str) -> Vec<Package> {
+    let mut results = vec![];
+    for line in s.lines() {
+      if line.trim().is_empty() {
+        continue;
+      }
+      let parts: Vec<&str> = line.trim().split(":").collect();
+      let name = parts[0];
+      let deps_str = parts[1].trim();
+      results.push(Package {
+        name: name.to_string(),
+        depends: DependsAnyOf::from(deps_str, DepType::Depends).unwrap(),
+        ..Default::default()
+      })
+    }
+
+    results
+  }
+
+  #[test]
+  fn test_sort_vim() {
+    let packages = depstr2packages("
+      vim: vim-common, vim-runtime, libacl1, libc6, libcanberra0, libgpm2, libpython3.8, libselinux1, libtinfo6
+      libpython3.8: libpython3.8-stdlib, libc, libexpat1, zlib1g
+      libgpm2: libc6
+      sound-theme-freedesktop:
+      libcanberra0: libasound2, libc6, libltdl7, libtdb1, libvorbisfile3, sound-theme-freedesktop
+      libvorbisfile3: libc6, libogg0, libvorbis0a
+      libvorbis0a: libc6, libogg0
+      libogg0: libc6
+      libtdb1: libc6
+      libltdl7: libc6
+      libasound2: libasound2-data, libc6
+      libasound2-data:
+      vim-runtime:
+      vim-common: xxd
+      xxd: libc6
+    ");
+    let pwss: HashSet<PackageWithSource> = packages
+      .into_iter()
+      .map(|package| PackageWithSource {
+        package,
+        source: Source::from(
+          ArchivedType::DEB,
+          "http://hoge",
+          "focal",
+          vec![Component::MAIN],
+        )
+        .into_iter()
+        .next()
+        .unwrap(),
+        dpkg_status: None,
+      })
+      .collect();
+
+    let sorted = sort_depends(pwss, "vim").unwrap();
+
+    let freedesktop_ix = sorted
+      .iter()
+      .position(|pws| pws.package.name.contains("freedesktop"))
+      .unwrap();
+    let canberra_ix = sorted
+      .iter()
+      .position(|pws| pws.package.name.contains("canberra"))
+      .unwrap();
+    assert_eq!(canberra_ix < freedesktop_ix, true);
   }
 }

@@ -60,8 +60,9 @@ impl DpkgExtracter {
       });
     }
 
+    // XXX should parse `Break` field instead using `--auto-deconfigure`.
     let output = Command::new("dpkg")
-      .args(&["--unpack", &archived_fullname])
+      .args(&["--auto-deconfigure", "--unpack", &archived_fullname])
       .output()
       .unwrap();
     if output.status.success() {

@@ -20,7 +20,7 @@ use std::collections::HashSet;
 
 pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   // acquire lock
-  let lock = acquire_lock_blocking_pretty(context)?;
+  let lock = acquire_lock_blocking_pretty(&context.lists_lock)?;
 
   // get list of sources
   println!(

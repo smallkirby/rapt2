@@ -2,9 +2,9 @@
  This file implements misc helper functions.
 */
 
+use crate::command::error::RaptError;
 use crate::package::client::PackageWithSource;
 use crate::package::package::DepType;
-use crate::{command::error::RaptError, context::Context};
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use console::style;
@@ -34,6 +34,7 @@ pub mod emoji {
   pub static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
   pub static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");
   pub static EMOJI_COMPUTER: Emoji<'_, '_> = Emoji("💻", "");
+  pub static EMOJI_FIRE: Emoji<'_, '_> = Emoji("🔥", "");
 }
 
 pub fn split_by_empty_line(s: &str) -> Vec<Vec<String>> {
@@ -177,15 +178,15 @@ pub fn confirm_user_yesno(msg: &str) -> bool {
   s.to_lowercase().starts_with('y')
 }
 
-pub fn acquire_lock_blocking_pretty(context: &Context) -> Result<File, RaptError> {
-  match try_lock_file(context.lists_lock.clone(), true) {
+pub fn acquire_lock_blocking_pretty(lock_file: &PathBuf) -> Result<File, RaptError> {
+  match try_lock_file(lock_file.clone(), true) {
     Ok(file) => Ok(file),
     Err(err) => match err {
       FileLockError::LockAcquireFailed => {
         let pb = create_long_spinner(format!("{} Waiting lock is acquired ", emoji::EMOJI_LOCK));
-        let mut result = try_lock_file(context.lists_lock.clone(), true);
+        let mut result = try_lock_file(lock_file.clone(), true);
         while result.is_err() {
-          result = try_lock_file(context.lists_lock.clone(), true);
+          result = try_lock_file(lock_file.clone(), true);
           thread::sleep(Duration::from_millis(1));
         }
         pb.finish_with_message("DONE");

@@ -23,6 +23,7 @@ impl Rapt {
       SubCommand::DEP { args } => dep::execute(&self.context, args),
       SubCommand::INSTALL { args } => install::execute(&self.context, args),
       SubCommand::UPGRADE { args } => upgrade::execute(&self.context, args),
+      SubCommand::CLEAN { args } => clean::execute(&self.context, args),
       _ => unimplemented!(),
     };
 

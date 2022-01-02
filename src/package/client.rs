@@ -288,6 +288,33 @@ impl PackageClient {
 
     Ok(())
   }
+
+  // Remove all files named "*.deb" in `archive_dir`.
+  // returns the number of removed binary files.
+  pub fn remove_deb_caches(&self, archive_dir: &Path) -> Result<i32, PackageError> {
+    if !archive_dir.is_dir() {
+      return Err(PackageError::FileNotFound {
+        target: archive_dir.to_string_lossy().to_string(),
+      });
+    }
+
+    let mut removed_count = 0;
+    // enumerate *.deb files and remove it
+    for result in archive_dir.read_dir()? {
+      if let Ok(entry) = result {
+        if !entry.file_type()?.is_file() {
+          continue;
+        }
+        let name = entry.file_name().to_string_lossy().to_string();
+        if name.ends_with(".deb") {
+          fs::remove_file(entry.path())?;
+          removed_count += 1;
+        }
+      }
+    }
+
+    Ok(removed_count)
+  }
 }
 
 #[derive(Debug, Eq, Clone)]

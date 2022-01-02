@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand};
 
+pub mod clean;
 pub mod dep;
 pub mod install;
 pub mod list;
@@ -41,6 +42,11 @@ pub enum SubCommand {
     #[clap(flatten)]
     args: DepArgs,
   },
+  #[clap(about = "Clean cached binary packages.")]
+  CLEAN {
+    #[clap(flatten)]
+    args: CleanArgs,
+  },
 }
 
 #[derive(Args, Debug)]
@@ -72,3 +78,6 @@ pub struct InstallArgs {
   #[clap(short = 'N', long, help = "Dry run.")]
   pub dry_run: bool,
 }
+
+#[derive(Args, Debug)]
+pub struct CleanArgs {}

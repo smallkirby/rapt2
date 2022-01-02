@@ -15,7 +15,7 @@ use std::path::PathBuf;
 
 pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> {
   // acquire lock
-  let lock = acquire_lock_blocking_pretty(context)?;
+  let lock = acquire_lock_blocking_pretty(&context.lists_lock)?;
 
   // first, check upgradable packages
   println!(

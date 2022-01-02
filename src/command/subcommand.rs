@@ -4,6 +4,7 @@ pub mod clean;
 pub mod dep;
 pub mod install;
 pub mod list;
+pub mod remove;
 pub mod update;
 pub mod upgrade;
 
@@ -24,8 +25,11 @@ pub enum SubCommand {
     #[clap(flatten)]
     args: InstallArgs,
   },
-  #[clap(about = "(not implemented)")]
-  REMOVE,
+  #[clap(about = "Remove packages.")]
+  REMOVE {
+    #[clap(flatten)]
+    args: RemoveArgs,
+  },
   #[clap(about = "(not implemented)")]
   PURGE,
   #[clap(about = "(not implemented)")]
@@ -81,3 +85,9 @@ pub struct InstallArgs {
 
 #[derive(Args, Debug)]
 pub struct CleanArgs {}
+
+#[derive(Args, Debug)]
+pub struct RemoveArgs {
+  #[clap(help = "Target package name.")]
+  pub keyword: String,
+}

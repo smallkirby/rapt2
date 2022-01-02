@@ -12,6 +12,7 @@ pub struct Context {
   pub list_dir: PathBuf,    // package list dir
   pub source_dir: PathBuf,  // source list dir
   pub dpkg_dir: PathBuf,    // dpkg base dir
+  pub dpkg_lock: PathBuf,   // dpkg frontend lock
   pub lists_lock: PathBuf,  // list cache lock
   pub archive_dir: PathBuf, // binary deb file archive dir
   pub verbose: bool,        // verbose output flag
@@ -24,6 +25,7 @@ impl Default for Context {
     let archive_dir = PathBuf::from("/var/cache/apt/archives");
 
     let dpkg_dir = PathBuf::from("/var/lib/dpkg");
+    let dpkg_lock = dpkg_dir.join("lock-frontend");
 
     let lists_lock = PathBuf::from("/var/lib/apt/lists/lock"); // share with apt
 
@@ -33,6 +35,7 @@ impl Default for Context {
       dpkg_dir,
       lists_lock,
       archive_dir,
+      dpkg_lock,
       verbose: false,
     }
   }
@@ -59,6 +62,9 @@ pub struct Args {
   #[clap(long, help = ".deb archive cache directory", default_value = "")]
   pub archive_dir: String,
 
+  #[clap(long, help = "dpkg frontend lock file", default_value = "")]
+  pub dpkg_lock: String,
+
   #[clap(long, help = "verbose output.")]
   pub verbose: bool,
 }
@@ -83,6 +89,10 @@ impl Args {
 
     if !self.archive_dir.is_empty() {
       context.archive_dir = PathBuf::from(&self.archive_dir)
+    };
+
+    if !self.dpkg_lock.is_empty() {
+      context.dpkg_lock = PathBuf::from(&self.dpkg_lock)
     };
 
     if self.verbose {

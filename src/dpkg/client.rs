@@ -10,6 +10,7 @@ use once_cell::sync::OnceCell;
 use std::collections::HashSet;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 // Dpkg IO client.
 // It ensures that dpkg status file is read only once for each `DpkgClient` by using `OnceCell`.
@@ -50,6 +51,8 @@ impl DpkgClient {
     }
   }
 
+  // Returns all packages with their status listed in dpkg status DB.
+  // NOTE: This function returns not-installed (removed) packages against its name.
   pub fn get_installed_packages(&mut self) -> Result<HashSet<Package>, PackageError> {
     if !self.is_cache_initiated() {
       self.harvest_dpkg_package_cache()?;
@@ -144,6 +147,22 @@ impl DpkgClient {
         }
       }
       None => Ok(StatusComp::NOTINSTALLED),
+    }
+  }
+
+  pub fn remove_package(self, package: &Package) -> Result<(), PackageError> {
+    let output = Command::new("dpkg")
+      .args(&["--remove", &package.name])
+      .output()
+      .unwrap();
+    if output.status.success() {
+      Ok(())
+    } else {
+      let errstr = String::from_utf8(output.stderr).unwrap();
+      Err(PackageError::InstallFailed {
+        package_name: package.name.to_string(),
+        errstr,
+      })
     }
   }
 }

@@ -28,7 +28,10 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   let source_client = SourceClient::new(PathBuf::from(&context.source_dir))?;
   let sources = source_client.read_all()?;
   let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
-  let mut dpkg_client = DpkgClient::new(PathBuf::from(&context.dpkg_dir));
+  let mut dpkg_client = DpkgClient::new(
+    PathBuf::from(&context.dpkg_dir),
+    context.extended_state.clone(),
+  );
   let deps = package_client.get_package_with_deps(
     &keyword,
     &sources.into_iter().collect(),
@@ -107,6 +110,17 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
     let dpkg_client = DpkgInstaller::new(
       PathBuf::from(&context.archive_dir),
       layer.into_iter().rev().collect(),
+      sorted_deps
+        .iter()
+        .map(|pws| {
+          if pws.package.name == keyword {
+            "".into()
+          } else {
+            pws.package.name.to_string()
+          }
+        })
+        .collect(),
+      context.extended_state.clone(),
     )?;
     for extracter in dpkg_client.extracters_iter() {
       progress.set_message(extracter.pws.package.name.clone());

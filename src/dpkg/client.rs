@@ -17,13 +17,15 @@ use std::process::Command;
 pub struct DpkgClient {
   dpkg_dir: PathBuf,
   dpkg_package_cache: OnceCell<HashSet<Package>>,
+  extended_state: PathBuf,
 }
 
 impl DpkgClient {
-  pub fn new(dpkg_dir: PathBuf) -> Self {
+  pub fn new(dpkg_dir: PathBuf, extended_state: PathBuf) -> Self {
     Self {
       dpkg_dir,
       dpkg_package_cache: OnceCell::new(),
+      extended_state,
     }
   }
 
@@ -69,8 +71,8 @@ impl DpkgClient {
     packages: &HashSet<Package>,
   ) -> Result<Vec<PackageStatus>, PackageError> {
     let installed_packages = self.get_installed_packages()?;
-    let extended_info_client = extended_states::AptExtendedStates::new();
-    let extended_info = extended_info_client.get()?;
+    let extended_info_client = extended_states::AptExtendedStateClient::new(&self.extended_state);
+    let extended_info = extended_info_client.read()?;
     self.get_obsolute_packages_internal(packages, installed_packages, extended_info)
   }
 
@@ -190,7 +192,10 @@ mod tests {
 
   #[test]
   fn test_dpkg_status_is_readable() {
-    let mut client = DpkgClient::new(PathBuf::from("/var/lib/dpkg"));
+    let mut client = DpkgClient::new(
+      PathBuf::from("/var/lib/dpkg"),
+      PathBuf::from("/var/lib/apt/extended_states"),
+    );
     client.get_installed_packages().unwrap();
   }
 
@@ -199,7 +204,10 @@ mod tests {
   fn test_dpkg_get_obsolute_packages() {
     let package_client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
     let packages = package_client.read_single_file("test2_Packages").unwrap();
-    let mut dpkg_client = DpkgClient::new(PathBuf::from("./tests/resources/dpkg"));
+    let mut dpkg_client = DpkgClient::new(
+      PathBuf::from("./tests/resources/dpkg"),
+      PathBuf::from("/var/lib/apt/extended_states"),
+    );
     let obsolute_packages = dpkg_client.get_obsolute_packages(&packages).unwrap();
     assert_eq!(obsolute_packages.len(), 1);
     assert_eq!(

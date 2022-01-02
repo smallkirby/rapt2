@@ -89,7 +89,8 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
     style("[4/4]").bold().dim(),
     EMOJI_GLASS,
   );
-  let mut dpkg_client = dpkg::client::DpkgClient::new(context.dpkg_dir.clone());
+  let mut dpkg_client =
+    dpkg::client::DpkgClient::new(context.dpkg_dir.clone(), context.extended_state.clone());
   let obsolute_packages = dpkg_client.get_obsolute_packages(&total_packages)?;
 
   // show result

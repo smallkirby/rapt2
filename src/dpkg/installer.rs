@@ -2,24 +2,33 @@
  This file defines dpkg client to request installation of packages.
 */
 
-use crate::package::{client::PackageWithSource, error::PackageError};
+use crate::{
+  apt::extended_states::AptExtendedStateClient,
+  package::{client::PackageWithSource, error::PackageError},
+};
 
 use std::{path::PathBuf, process::Command};
 
 pub struct DpkgInstaller {
   archive_dir: PathBuf,
-  pub pwss: Vec<PackageWithSource>,
+  pub pwss: Vec<PackageWithSource>, // packages to be installed
+  automatics: Vec<String>,          // names of automatically installed packages
+  extended_state: PathBuf,          // apt extended_state path
 }
 
 pub struct DpkgExtracterIter {
   archive_dir: PathBuf,
   curr: usize,
   pub pwss: Vec<PackageWithSource>,
+  automatics: Vec<String>, // names of automatically installed packages
+  extended_state: PathBuf,
 }
 
 pub struct DpkgExtracter {
   archive_dir: PathBuf,
   pub pws: PackageWithSource,
+  is_automatic: bool,
+  extended_state: PathBuf,
 }
 
 pub struct DpkgConfigurerIter {
@@ -43,6 +52,8 @@ impl Iterator for DpkgExtracterIter {
     Some(Self::Item {
       pws: self.pwss[ix].clone(),
       archive_dir: self.archive_dir.clone(),
+      is_automatic: self.automatics.contains(&self.pwss[ix].package.name),
+      extended_state: self.extended_state.clone(),
     })
   }
 }
@@ -53,6 +64,7 @@ impl DpkgExtracter {
     let archived_filename = package.filename.split('/').last().unwrap();
     let archived_path = self.archive_dir.join(archived_filename);
     let archived_fullname = archived_path.to_string_lossy().to_string();
+    let extended_state_client = AptExtendedStateClient::new(&self.extended_state);
 
     if !archived_path.as_path().is_file() {
       return Err(PackageError::FileNotFound {
@@ -66,6 +78,7 @@ impl DpkgExtracter {
       .output()
       .unwrap();
     if output.status.success() {
+      extended_state_client.update(&package.name, self.is_automatic)?;
       Ok(())
     } else {
       let errstr = String::from_utf8(output.stderr).unwrap();
@@ -113,14 +126,24 @@ impl DpkgConfigurer {
 }
 
 impl DpkgInstaller {
-  pub fn new(archive_dir: PathBuf, pwss: Vec<PackageWithSource>) -> Result<Self, PackageError> {
+  pub fn new(
+    archive_dir: PathBuf,
+    pwss: Vec<PackageWithSource>,
+    automatics: Vec<String>,
+    extended_state: PathBuf,
+  ) -> Result<Self, PackageError> {
     if !archive_dir.as_path().is_dir() {
       return Err(PackageError::FileNotFound {
         target: archive_dir.to_string_lossy().to_string(),
       });
     }
 
-    Ok(Self { archive_dir, pwss })
+    Ok(Self {
+      archive_dir,
+      pwss,
+      automatics,
+      extended_state,
+    })
   }
 
   pub fn extracters_iter(&self) -> DpkgExtracterIter {
@@ -128,6 +151,8 @@ impl DpkgInstaller {
       archive_dir: self.archive_dir.clone(),
       pwss: self.pwss.clone(),
       curr: 0,
+      automatics: self.automatics.clone(),
+      extended_state: self.extended_state.clone(),
     }
   }
 

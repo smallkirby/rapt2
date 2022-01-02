@@ -28,7 +28,10 @@ pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> 
   let sources: Vec<Source> = source_client.read_all()?.into_iter().collect();
   let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
   let pwss = package_client.read_all_from_source_with_source(&sources)?;
-  let mut dpkg_client = DpkgClient::new(PathBuf::from(&context.dpkg_dir));
+  let mut dpkg_client = DpkgClient::new(
+    PathBuf::from(&context.dpkg_dir),
+    context.extended_state.clone(),
+  );
   let obsolute_packages =
     dpkg_client.get_obsolute_packages(&pwss.iter().map(|pws| pws.package.clone()).collect())?;
   if obsolute_packages.is_empty() {
@@ -152,6 +155,8 @@ pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> 
     let dpkg_client = DpkgInstaller::new(
       PathBuf::from(&context.archive_dir),
       layer.into_iter().rev().collect(),
+      vec![],
+      context.extended_state.clone(),
     )?;
     for extracter in dpkg_client.extracters_iter() {
       progress.set_message(extracter.pws.package.name.clone());

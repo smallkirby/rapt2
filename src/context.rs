@@ -9,13 +9,14 @@ use std::path::PathBuf;
 
 #[derive(Debug)]
 pub struct Context {
-  pub list_dir: PathBuf,    // package list dir
-  pub source_dir: PathBuf,  // source list dir
-  pub dpkg_dir: PathBuf,    // dpkg base dir
-  pub dpkg_lock: PathBuf,   // dpkg frontend lock
-  pub lists_lock: PathBuf,  // list cache lock
-  pub archive_dir: PathBuf, // binary deb file archive dir
-  pub verbose: bool,        // verbose output flag
+  pub list_dir: PathBuf,       // package list dir
+  pub source_dir: PathBuf,     // source list dir
+  pub dpkg_dir: PathBuf,       // dpkg base dir
+  pub dpkg_lock: PathBuf,      // dpkg frontend lock
+  pub lists_lock: PathBuf,     // list cache lock
+  pub archive_dir: PathBuf,    // binary deb file archive dir
+  pub extended_state: PathBuf, // apt extended state path
+  pub verbose: bool,           // verbose output flag
 }
 
 impl Default for Context {
@@ -23,6 +24,7 @@ impl Default for Context {
     let list_dir = PathBuf::from("/var/lib/apt/lists.rapt2");
     let source_dir = PathBuf::from("/etc/apt");
     let archive_dir = PathBuf::from("/var/cache/apt/archives");
+    let extended_state = PathBuf::from("/var/lib/apt/extended_states");
 
     let dpkg_dir = PathBuf::from("/var/lib/dpkg");
     let dpkg_lock = dpkg_dir.join("lock-frontend");
@@ -36,6 +38,7 @@ impl Default for Context {
       lists_lock,
       archive_dir,
       dpkg_lock,
+      extended_state,
       verbose: false,
     }
   }
@@ -61,6 +64,9 @@ pub struct Args {
 
   #[clap(long, help = ".deb archive cache directory", default_value = "")]
   pub archive_dir: String,
+
+  #[clap(long, help = "apt extended_state path", default_value = "")]
+  pub extended_state: String,
 
   #[clap(long, help = "dpkg frontend lock file", default_value = "")]
   pub dpkg_lock: String,
@@ -89,6 +95,10 @@ impl Args {
 
     if !self.archive_dir.is_empty() {
       context.archive_dir = PathBuf::from(&self.archive_dir)
+    };
+
+    if !self.extended_state.is_empty() {
+      context.extended_state = PathBuf::from(&self.extended_state)
     };
 
     if !self.dpkg_lock.is_empty() {

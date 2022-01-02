@@ -18,7 +18,7 @@ pub fn execute(context: &Context, args: &RemoveArgs) -> Result<(), RaptError> {
 
   // get dpkg status of packages
   println!("{} Reading packages lists...", EMOJI_SPARKLES);
-  let mut dpkg_client = DpkgClient::new(context.dpkg_dir.clone());
+  let mut dpkg_client = DpkgClient::new(context.dpkg_dir.clone(), context.extended_state.clone());
   let packages = dpkg_client.get_installed_packages()?;
   let target_package = packages.into_iter().find(|package| package.name == keyword);
   // XXX should distinguish between non-existing and non~installed.

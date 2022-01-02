@@ -3,27 +3,29 @@
  Refer to `/docs/extended_states.md` for the details.
 */
 
+use crate::package::error::PackageError;
+
 use std::fs;
 use std::path::PathBuf;
 
-pub struct AptExtendedStates {
+pub struct AptExtendedStateClient {
   path: PathBuf,
 }
 
-impl Default for AptExtendedStates {
+impl Default for AptExtendedStateClient {
   fn default() -> Self {
-    Self::new()
+    Self::new(&PathBuf::from("/var/lib/apt/extended_states"))
   }
 }
 
-impl AptExtendedStates {
-  pub fn new() -> Self {
+impl AptExtendedStateClient {
+  pub fn new(extended_state: &PathBuf) -> Self {
     Self {
-      path: PathBuf::from("/var/lib/apt/extended_states"),
+      path: extended_state.clone(),
     }
   }
 
-  pub fn get(&self) -> Result<Vec<AptExtendedPackageInfo>, std::io::Error> {
+  pub fn read(&self) -> Result<Vec<AptExtendedPackageInfo>, std::io::Error> {
     let content = fs::read_to_string(self.path.as_path())?;
     let mut lines = vec![];
     let mut result = vec![];
@@ -39,6 +41,43 @@ impl AptExtendedStates {
     }
 
     Ok(result)
+  }
+
+  // Update entry of apt extended_states.
+  // If an entry for `package_name` exists, update its value or remove the entry.
+  // NOTE: if `auto_installed` is false, it just removes the entry.
+  pub fn update(&self, package_name: &str, auto_installed: bool) -> Result<(), PackageError> {
+    let mut extended_infos = self.read()?;
+    let target_info_ix = extended_infos
+      .iter()
+      .position(|info| info.name == package_name);
+    let new_extended_file_str = match target_info_ix {
+      Some(target_info_ix) => {
+        if auto_installed {
+          return Ok(());
+        } else {
+          extended_infos.remove(target_info_ix);
+          extended_states_to_string(&extended_infos)
+        }
+      }
+      None => {
+        if auto_installed {
+          let target_info = AptExtendedPackageInfo {
+            name: package_name.into(),
+            arch: "amd64".into(),
+            automatic_installed: auto_installed,
+          };
+          extended_infos.push(target_info);
+          extended_states_to_string(&extended_infos)
+        } else {
+          return Ok(());
+        }
+      }
+    };
+
+    std::fs::write(self.path.clone(), new_extended_file_str)?;
+
+    Ok(())
   }
 }
 
@@ -73,4 +112,28 @@ impl AptExtendedPackageInfo {
       automatic_installed,
     })
   }
+
+  pub fn to_target_string(&self) -> String {
+    format!(
+      "Package: {}\nArchitecture: {}\nAuto-Installed: {}",
+      self.name,
+      self.arch,
+      if self.automatic_installed { "1" } else { "0" }
+    )
+  }
+}
+
+// Convert extended_state entries into the format of extended_state file.
+// If entry's `automatic_installed` is false, just ignore the entry.
+fn extended_states_to_string(infos: &Vec<AptExtendedPackageInfo>) -> String {
+  let targets: Vec<&AptExtendedPackageInfo> = infos
+    .into_iter()
+    .filter(|info| info.automatic_installed)
+    .collect();
+  targets
+    .into_iter()
+    .map(|info| info.to_target_string())
+    .collect::<Vec<String>>()
+    .join("\n\n")
+    + "\n"
 }

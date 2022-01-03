@@ -3,7 +3,7 @@
 */
 
 use super::status::*;
-use crate::apt::extended_states;
+use crate::apt::extended_states::{self, AptExtendedStateClient};
 use crate::package::{error::PackageError, package::*, parser, version};
 
 use once_cell::sync::OnceCell;
@@ -154,11 +154,14 @@ impl DpkgClient {
 
   // XXX must update extended_states
   pub fn remove_package(&self, package: &Package) -> Result<(), PackageError> {
+    let extended_state_client = AptExtendedStateClient::new(&self.extended_state);
+
     let output = Command::new("dpkg")
       .args(&["--remove", &package.name])
       .output()
       .unwrap();
     if output.status.success() {
+      extended_state_client.update(&package.name, false)?;
       Ok(())
     } else {
       let errstr = String::from_utf8(output.stderr).unwrap();

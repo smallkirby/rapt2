@@ -31,6 +31,11 @@ pub fn execute(context: &Context, args: &RemoveArgs) -> Result<(), RaptError> {
     return Ok(());
   }
 
+  // ask again
+  if !confirm_user_yesno("Do you really remove?") {
+    return Ok(());
+  }
+
   // remove package
   // XXX should update extended-state?
   let target_package = target_package.unwrap();

@@ -47,7 +47,7 @@ pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> 
   println!(
     "{} {} packages are upgradable:",
     EMOJI_EXC,
-    style(obsolute_packages.len()).bold(),
+    style(obsolute_packages.len()).cyan().bold(),
   );
   for package in &obsolute_packages {
     let new_version = if let Some(v) = &package.new_version {

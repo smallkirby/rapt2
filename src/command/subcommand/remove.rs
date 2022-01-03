@@ -49,7 +49,7 @@ pub fn execute(context: &Context, args: &RemoveArgs) -> Result<(), RaptError> {
       return Ok(());
     }
   }
-  dpkg_client.remove_package(&target_package)?;
+  dpkg_client.remove_package(&target_package, false)?;
 
   // release lock
   drop(lock);

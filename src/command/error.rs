@@ -29,4 +29,7 @@ pub enum RaptError {
 
   #[error("Unknown command: {command:?}")]
   UnknownCommand { command: SubCommand },
+
+  #[error("Unknown error: {msg:?}")]
+  UnknownError { msg: String },
 }

@@ -5,6 +5,7 @@ pub mod clean;
 pub mod dep;
 pub mod install;
 pub mod list;
+pub mod purge;
 pub mod remove;
 pub mod update;
 pub mod upgrade;
@@ -36,8 +37,11 @@ pub enum SubCommand {
     #[clap(flatten)]
     args: AutoRemoveArgs,
   },
-  #[clap(about = "(not implemented)")]
-  PURGE,
+  #[clap(about = "Completely uninstall packages including its config files.")]
+  PURGE {
+    #[clap(flatten)]
+    args: PurgeArgs,
+  },
   #[clap(about = "(not implemented)")]
   SEARCH,
   #[clap(about = "(not implemented)")]
@@ -100,3 +104,9 @@ pub struct RemoveArgs {
 
 #[derive(Args, Debug, Clone)]
 pub struct AutoRemoveArgs {}
+
+#[derive(Args, Debug, Clone)]
+pub struct PurgeArgs {
+  #[clap(help = "Target package name.")]
+  pub keyword: String,
+}

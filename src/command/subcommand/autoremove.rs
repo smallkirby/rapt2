@@ -86,7 +86,7 @@ pub fn execute(context: &Context, _args: &AutoRemoveArgs) -> Result<(), RaptErro
   let progress = default_progbar(auto_removables.len() as u64);
   for auto_removable in auto_removables {
     progress.set_message(auto_removable.name.clone());
-    dpkg_client.remove_package(&auto_removable)?;
+    dpkg_client.remove_package(&auto_removable, false)?;
     progress.inc(1);
   }
   progress.abandon_with_message("Complete.");

@@ -153,11 +153,12 @@ impl DpkgClient {
   }
 
   // XXX must update extended_states
-  pub fn remove_package(&self, package: &Package) -> Result<(), PackageError> {
+  pub fn remove_package(&self, package: &Package, purge: bool) -> Result<(), PackageError> {
     let extended_state_client = AptExtendedStateClient::new(&self.extended_state);
+    let operation = if purge { "--purge" } else { "--remove" };
 
     let output = Command::new("dpkg")
-      .args(&["--remove", &package.name])
+      .args(&[operation, &package.name])
       .output()
       .unwrap();
     if output.status.success() {

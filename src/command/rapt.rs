@@ -28,6 +28,7 @@ impl Rapt {
       SubCommand::CLEAN { args } => clean::execute(&self.context, args),
       SubCommand::REMOVE { args } => remove::execute(&self.context, args),
       SubCommand::AUTOREMOVE { args } => autoremove::execute(&self.context, args),
+      SubCommand::PURGE { args } => purge::execute(&self.context, args),
       _ => Err(RaptError::UnknownCommand {
         command: self.command.clone(),
       }),

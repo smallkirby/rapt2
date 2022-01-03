@@ -26,7 +26,7 @@ pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> 
 
   let source_client = SourceClient::new(PathBuf::from(&context.source_dir))?;
   let sources: Vec<Source> = source_client.read_all()?.into_iter().collect();
-  let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
+  let mut package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
   let pwss = package_client.read_all_from_source_with_source(&sources)?;
   let mut dpkg_client = DpkgClient::new(
     PathBuf::from(&context.dpkg_dir),

@@ -28,7 +28,7 @@ fn test_resolve_deps() {
     distro: "/".into(),
     component: Component::NULL,
   };
-  let client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
+  let mut client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
   let deps = client
     .get_package_with_deps("0", &vec![source], true, None)
     .unwrap();
@@ -93,7 +93,7 @@ fn test_predeps() {
     distro: "/".into(),
     component: Component::NULL,
   };
-  let client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
+  let mut client = PackageClient::new(PathBuf::from("tests/resources/lists")).unwrap();
   let deps = client
     .get_package_with_deps("1", &vec![source], true, None)
     .unwrap();

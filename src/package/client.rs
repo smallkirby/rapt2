@@ -3,9 +3,10 @@
 */
 
 /*
- NOTE: All methods of `PackageClient` must NOT read each package list files more than once.
- XXX: Maybe, it should use lazy_static cache member to gurantee that one client reads
-     package list files only onece, upon each methods.
+  NOTE: all methods except for `read_single_file_raw()` uses cache for list DB.
+    Hence, each instance of `PackageClient` reads a same file only once.
+    If you want to ignore its cache, you must use `read_single_file_raw()`.
+    (It would not happen that you read list DB after updating it.)
 */
 
 use super::package::EntryType;
@@ -14,12 +15,14 @@ use crate::dpkg::client::{DpkgClient, StatusComp};
 use crate::source::source::{ArchivedType, Source};
 
 use glob;
+use std::collections::HashMap;
 use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
 pub struct PackageClient {
-  cache_dir: PathBuf, // package cache dir
+  cache_dir: PathBuf,                            // package cache dir
+  list_cache: HashMap<String, HashSet<Package>>, // list DB cache
 }
 
 impl PackageClient {
@@ -30,17 +33,34 @@ impl PackageClient {
         target: path.to_string_lossy().to_string(),
       })
     } else {
-      Ok(Self { cache_dir })
+      Ok(Self {
+        cache_dir,
+        list_cache: HashMap::new(),
+      })
     }
   }
 
   // read a single list file.
   // `filename` is relative filename to `self.cache_dir`.
-  pub fn read_single_file(&self, filename: &str) -> Result<HashSet<Package>, PackageError> {
-    let content = self.read_single_file_raw(filename)?;
-    parser::parse_entries_as_binary(&content) // XXX
+  pub fn read_single_file(&mut self, filename: &str) -> Result<HashSet<Package>, PackageError> {
+    if self.list_cache.contains_key(filename) {
+      let packages = self.list_cache.get(filename).unwrap();
+      Ok(packages.clone())
+    } else {
+      let content = self.read_single_file_raw(filename)?;
+      let packages = parser::parse_entries_as_binary(&content)?;
+      self
+        .list_cache
+        .insert(filename.to_string(), packages.clone());
+      Ok(packages)
+    }
   }
 
+  pub fn read_single_source(&mut self, source: &Source) -> Result<HashSet<Package>, PackageError> {
+    self.read_single_file(&source.cache_filename())
+  }
+
+  // NOTE: this func doesn't use cache
   pub fn read_single_file_raw(&self, filename: &str) -> Result<String, PackageError> {
     let pathbuf = self.cache_dir.join(filename);
     let path = pathbuf.as_path();
@@ -55,20 +75,21 @@ impl PackageClient {
     Ok(content)
   }
 
-  pub fn read_all_from_source(&self, sources: &[Source]) -> Result<HashSet<Package>, PackageError> {
+  pub fn read_all_from_source(
+    &mut self,
+    sources: &[Source],
+  ) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
 
     for source in sources {
-      // ignore error cuz lists file contains unreadable files such as `lock`.
-      if let Ok(packages) = self.read_single_file(&source.cache_filename()) {
-        results.extend(packages);
-      }
+      let packages = self.read_single_source(source)?;
+      results.extend(packages);
     }
 
     Ok(results)
   }
 
-  pub fn read_all(&self) -> Result<HashSet<Package>, PackageError> {
+  pub fn read_all(&mut self) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
     let base = self.cache_dir.as_path();
     let files = fs::read_dir(base)?;
@@ -102,7 +123,7 @@ impl PackageClient {
   // search packages from list DB by package name.
   // glob pattern is supported for search.
   // NOTE: if multiple packages with same name found, the first one is returned.
-  pub fn search_by_name(&self, name: &str) -> Result<HashSet<Package>, PackageError> {
+  pub fn search_by_name(&mut self, name: &str) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
     let pattern = match glob::Pattern::new(name) {
       Ok(pattern) => pattern,
@@ -120,7 +141,7 @@ impl PackageClient {
   }
 
   pub fn read_all_from_source_with_source(
-    &self,
+    &mut self,
     sources: &[Source],
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
     let mut results: HashSet<PackageWithSource> = HashSet::new();
@@ -156,7 +177,7 @@ impl PackageClient {
   // search packages from list DB by package name.
   // Returns found packages with Source info.
   pub fn search_by_name_with_source(
-    &self,
+    &mut self,
     name: &str,
     sources: Vec<Source>,
   ) -> Result<HashSet<PackageWithSource>, PackageError> {
@@ -181,7 +202,7 @@ impl PackageClient {
   // Get target packages and all of its dependencies with Source information.
   // Result is returned in flattened HashSet.
   pub fn get_package_with_deps(
-    &self,
+    &mut self,
     name: &str,                                      // target package
     #[allow(clippy::ptr_arg)] sources: &Vec<Source>, // sources to search for packages
     ignore_installed: bool,                          // ignore already installed packages
@@ -355,7 +376,7 @@ mod tests {
 
   #[test]
   fn test_search_by_name() {
-    let client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
+    let mut client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
 
     let result = client.search_by_name("vi*").unwrap();
     assert_eq!(result.len(), 1);

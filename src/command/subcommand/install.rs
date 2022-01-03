@@ -27,7 +27,7 @@ pub fn execute(context: &Context, args: &InstallArgs) -> Result<(), RaptError> {
   );
   let source_client = SourceClient::new(PathBuf::from(&context.source_dir))?;
   let sources = source_client.read_all()?;
-  let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
+  let mut package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
   let mut dpkg_client = DpkgClient::new(
     PathBuf::from(&context.dpkg_dir),
     context.extended_state.clone(),

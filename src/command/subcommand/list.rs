@@ -18,7 +18,7 @@ pub fn execute(context: &Context, args: &ListArgs) -> Result<(), RaptError> {
 
   // get list of packages
   println!("{} Reading package lists...", EMOJI_BOOKS,);
-  let package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
+  let mut package_client = PackageClient::new(PathBuf::from(&context.list_dir))?;
   let target_packages =
     package_client.search_by_name_with_source(&keyword, sources.into_iter().collect())?;
 

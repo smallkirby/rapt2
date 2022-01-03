@@ -101,6 +101,7 @@ impl PackageClient {
 
   // search packages from list DB by package name.
   // glob pattern is supported for search.
+  // NOTE: if multiple packages with same name found, the first one is returned.
   pub fn search_by_name(&self, name: &str) -> Result<HashSet<Package>, PackageError> {
     let mut results = HashSet::new();
     let pattern = match glob::Pattern::new(name) {
@@ -137,8 +138,9 @@ impl PackageClient {
           .collect();
         for package_with_source in packages_with_source {
           if results.contains(&package_with_source) {
-            let existing = results.get(&package_with_source).unwrap();
+            let existing = results.get(&package_with_source).unwrap().clone();
             if existing.package.version < package_with_source.package.version {
+              results.remove(&existing); // must remove first
               results.insert(package_with_source);
             }
           } else {
@@ -240,6 +242,8 @@ impl PackageClient {
     for dep in &target.package.depends {
       // XXX choose arbitrary dependencie
       let dep = &dep.depends[0];
+      // XXX it now choose first found depended-on package with same name.
+      // maybe, should choose latest version.
       if acc.iter().any(|pws| pws.package.name == dep.package) {
         continue;
       }

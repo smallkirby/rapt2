@@ -5,13 +5,17 @@
 use super::{super::error::RaptError, DepArgs};
 use crate::{
   context::Context,
-  package::{client::PackageClient, error::PackageError},
-  source::client::SourceClient,
+  package::{
+    client::{PackageClient, PackageWithSource},
+    error::PackageError,
+    package::Package,
+  },
+  source::{client::SourceClient, source::Source},
   util::emoji::*,
 };
 
 use console::style;
-use std::path::PathBuf;
+use std::{collections::HashMap, path::PathBuf};
 
 pub fn execute(context: &Context, args: &DepArgs) -> Result<(), RaptError> {
   let keyword = args.keyword.clone();
@@ -44,24 +48,82 @@ pub fn execute(context: &Context, args: &DepArgs) -> Result<(), RaptError> {
     Err(err) => return Err(err.into()),
   };
 
-  // show dependencies
-  println!("{}  Target: {}", EMOJI_TARGET, style(&keyword).yellow());
-  println!("{}  Dependencies({}):", EMOJI_DOWN, deps.len() - 1);
-  for dep in deps {
-    if dep.package.name == keyword {
-      // don't show target package itself
+  // show dependencies recursively
+  let deps: HashMap<String, PackageWithSource> = deps
+    .into_iter()
+    .map(|pws| (pws.package.name.clone(), pws))
+    .collect();
+  let root = deps.get(&keyword).unwrap();
+  print!("{} Target:\n    ", EMOJI_TARGET);
+  show_single_package(&root.package, &root.source);
+  println!(
+    "{}  Depends({}):",
+    EMOJI_DOWN,
+    style(deps.len() - 1).yellow(),
+  );
+
+  let mut shown_packages = vec![];
+  for root_depany in &root.package.depends {
+    let root_dep = &root_depany.depends[0];
+    if root_dep.package == keyword {
       continue;
     }
-    let package = dep.package;
-    let source = dep.source;
-    println!(
-      "\t{} / {} {} {}",
-      style(package.name).cyan(),
-      style(source.distro).dim(),
-      style(package.version).dim(),
-      style(package.arch).dim(),
-    );
+    recursive_depends_show(&root_dep.package, &deps, 1, &mut shown_packages);
   }
 
   Ok(())
+}
+
+fn recursive_depends_show(
+  name: &str,
+  packages: &HashMap<String, PackageWithSource>,
+  hierarchy: usize,
+  acc: &mut Vec<String>,
+) {
+  let target = packages.get(name).unwrap();
+  if acc.contains(&target.package.name) {
+    return;
+  }
+
+  // show package and source
+  print!("{}", "  ".repeat(hierarchy * 2));
+  show_single_package(&target.package, &target.source);
+
+  // more recursive printing
+  acc.push(target.package.name.clone());
+  for dep_anyof in &target.package.depends {
+    recursive_depends_show(&dep_anyof.depends[0].package, packages, hierarchy + 1, acc);
+  }
+}
+
+fn show_single_package(package: &Package, source: &Source) {
+  print!(
+    "{} / {} {} {} -> ",
+    style(&package.name).cyan(),
+    style(&source.distro).dim(),
+    style(&package.version).dim(),
+    style(&package.arch).dim(),
+  );
+  // show direct dependency
+  let depends_str = package
+    .depends
+    .iter()
+    .map(|anyof| {
+      if let Some(version) = &anyof.depends[0].version {
+        format!(
+          "{} ({})",
+          style(&anyof.depends[0].package).yellow().dim(),
+          style(version.to_string()).dim()
+        )
+      } else {
+        format!(
+          "{} ({})",
+          style(&anyof.depends[0].package).yellow().dim(),
+          style("any").dim()
+        )
+      }
+    })
+    .collect::<Vec<String>>()
+    .join(", ");
+  println!("{}", depends_str);
 }

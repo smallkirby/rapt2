@@ -16,11 +16,13 @@ struct Node {
   visited: bool,
   depending_on: bool,
   index: usize,
+  hierarchy: usize,
 }
 
 // NOTE: node MUST NOT be removed cuz each node is index-managed.
 pub struct Graph {
   nodes: HashMap<usize, Node>,
+  current_hierarchy: usize,
 }
 
 impl Graph {
@@ -37,6 +39,7 @@ impl Graph {
           visited: false,
           index: ix,
           depending_on: false,
+          hierarchy: 0,
         },
       );
     }
@@ -64,6 +67,7 @@ impl Graph {
         .into_iter()
         .map(|(_, node)| (node.index, node))
         .collect(),
+      current_hierarchy: 0,
     }
   }
 
@@ -71,6 +75,7 @@ impl Graph {
     for (_, node) in &mut self.nodes {
       node.visited = false;
       node.depending_on = false;
+      node.hierarchy = 0;
     }
   }
 
@@ -113,5 +118,65 @@ impl Graph {
     for revto in target.revto.clone() {
       self.rev_dfs(revto);
     }
+  }
+
+  // get dependencies of `root` package with hierarchical structure.
+  pub fn get_hierarchical_deps(&mut self, root: &str) -> Vec<Vec<Package>> {
+    // clear visited state
+    self.clear_visited();
+
+    let root = self
+      .nodes
+      .iter()
+      .find(|(_, node)| node.package.name == root);
+    // if root itself is not in Graph, return false
+    if root.is_none() {
+      return vec![];
+    }
+
+    // do DFS
+    let (_, root_node) = root.unwrap();
+    let root_package = root_node.package.clone();
+    for to in root_node.to.clone() {
+      self.dfs(to);
+    }
+
+    // collect visited packages
+    let visiteds: Vec<&Node> = self.nodes.values().filter(|node| node.visited).collect();
+    let mut results = vec![vec![root_package]];
+    let max_hierarchy = visiteds
+      .iter()
+      .max_by_key(|node| node.hierarchy)
+      .unwrap()
+      .hierarchy;
+    for hierarchy in 1..=max_hierarchy {
+      let mut current_packages = vec![];
+      let targets: Vec<&&Node> = visiteds
+        .iter()
+        .filter(|node| node.hierarchy == hierarchy)
+        .collect();
+      for target in targets {
+        current_packages.push(target.package.clone());
+      }
+      results.push(current_packages);
+    }
+
+    results
+  }
+
+  fn dfs(&mut self, start: usize) {
+    self.current_hierarchy += 1;
+    let target = self.nodes.get_mut(&start).unwrap();
+    if target.visited {
+      self.current_hierarchy -= 1;
+      return;
+    }
+    target.visited = true;
+    target.hierarchy = self.current_hierarchy;
+
+    for to in target.to.clone() {
+      self.dfs(to);
+    }
+    self.current_hierarchy -= 1;
   }
 }

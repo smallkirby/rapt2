@@ -3,8 +3,10 @@
  `Rapt` holds context information and executes subcommands.
 */
 
-use super::subcommand::*;
-use crate::context::Context;
+use super::{error::RaptError, subcommand::*};
+use crate::{context::Context, util::emoji::EMOJI_CROSS};
+
+use console::style;
 
 pub struct Rapt {
   context: Context,
@@ -26,11 +28,19 @@ impl Rapt {
       SubCommand::CLEAN { args } => clean::execute(&self.context, args),
       SubCommand::REMOVE { args } => remove::execute(&self.context, args),
       SubCommand::AUTOREMOVE { args } => autoremove::execute(&self.context, args),
-      _ => unimplemented!(),
+      _ => Err(RaptError::UnknownCommand {
+        command: self.command.clone(),
+      }),
     };
 
     if let Err(err) = result {
-      unimplemented!("{:?}", err);
+      println!(
+        "{} {}: rapt2 aborted an operation due to below error:",
+        EMOJI_CROSS,
+        style("Error").red().bold()
+      );
+      println!("{}", err.to_string());
+      std::process::exit(1);
     }
   }
 }

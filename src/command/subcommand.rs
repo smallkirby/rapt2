@@ -9,7 +9,7 @@ pub mod remove;
 pub mod update;
 pub mod upgrade;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone)]
 pub enum SubCommand {
   #[clap(about = "Update package list database.")]
   UPDATE {
@@ -59,13 +59,13 @@ pub enum SubCommand {
   },
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct UpdateArgs {}
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct UpgradeArgs {}
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct ListArgs {
   #[clap(long, help = "show only installed packages.")]
   pub installed: bool,
@@ -74,13 +74,13 @@ pub struct ListArgs {
   pub keyword: String,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct DepArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct InstallArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
@@ -89,14 +89,14 @@ pub struct InstallArgs {
   pub dry_run: bool,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct CleanArgs {}
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct RemoveArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
 }
 
-#[derive(Args, Debug)]
+#[derive(Args, Debug, Clone)]
 pub struct AutoRemoveArgs {}

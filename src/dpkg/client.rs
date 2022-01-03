@@ -152,7 +152,8 @@ impl DpkgClient {
     }
   }
 
-  pub fn remove_package(self, package: &Package) -> Result<(), PackageError> {
+  // XXX must update extended_states
+  pub fn remove_package(&self, package: &Package) -> Result<(), PackageError> {
     let output = Command::new("dpkg")
       .args(&["--remove", &package.name])
       .output()
@@ -202,7 +203,7 @@ mod tests {
   //#[test]
   #[allow(dead_code)]
   fn test_dpkg_get_obsolute_packages() {
-    let package_client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
+    let mut package_client = PackageClient::new(PathBuf::from("./tests/resources/lists")).unwrap();
     let packages = package_client.read_single_file("test2_Packages").unwrap();
     let mut dpkg_client = DpkgClient::new(
       PathBuf::from("./tests/resources/dpkg"),

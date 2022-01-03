@@ -25,6 +25,7 @@ impl Rapt {
       SubCommand::UPGRADE { args } => upgrade::execute(&self.context, args),
       SubCommand::CLEAN { args } => clean::execute(&self.context, args),
       SubCommand::REMOVE { args } => remove::execute(&self.context, args),
+      SubCommand::AUTOREMOVE { args } => autoremove::execute(&self.context, args),
       _ => unimplemented!(),
     };
 

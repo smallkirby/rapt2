@@ -4,6 +4,7 @@
 */
 
 use crate::package::error::PackageError;
+use crate::package::package::Package;
 
 use std::fs;
 use std::path::PathBuf;
@@ -25,7 +26,7 @@ impl AptExtendedStateClient {
     }
   }
 
-  pub fn read(&self) -> Result<Vec<AptExtendedPackageInfo>, std::io::Error> {
+  pub fn read(&self) -> Result<Vec<AptExtendedPackageInfo>, PackageError> {
     let content = fs::read_to_string(self.path.as_path())?;
     let mut lines = vec![];
     let mut result = vec![];
@@ -81,7 +82,7 @@ impl AptExtendedStateClient {
   }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AptExtendedPackageInfo {
   pub name: String,
   pub arch: String,
@@ -120,6 +121,14 @@ impl AptExtendedPackageInfo {
       self.arch,
       if self.automatic_installed { "1" } else { "0" }
     )
+  }
+
+  pub fn to_empty_package(&self) -> Package {
+    Package {
+      name: self.name.to_string(),
+      arch: self.arch.to_string(),
+      ..Default::default()
+    }
   }
 }
 

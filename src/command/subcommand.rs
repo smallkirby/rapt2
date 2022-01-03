@@ -1,5 +1,6 @@
 use clap::{Args, Subcommand};
 
+pub mod autoremove;
 pub mod clean;
 pub mod dep;
 pub mod install;
@@ -29,6 +30,11 @@ pub enum SubCommand {
   REMOVE {
     #[clap(flatten)]
     args: RemoveArgs,
+  },
+  #[clap(about = "Remove automatically installed, but unsed packages.")]
+  AUTOREMOVE {
+    #[clap(flatten)]
+    args: AutoRemoveArgs,
   },
   #[clap(about = "(not implemented)")]
   PURGE,
@@ -91,3 +97,6 @@ pub struct RemoveArgs {
   #[clap(help = "Target package name.")]
   pub keyword: String,
 }
+
+#[derive(Args, Debug)]
+pub struct AutoRemoveArgs {}

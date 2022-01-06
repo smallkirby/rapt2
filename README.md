@@ -1,7 +1,9 @@
 # rapt2
 
-<video controls width="100%" width="100%" autoplay loop="true" src="https://user-images.githubusercontent.com/47111091/148347839-04d2075c-5e16-4ad9-a43d-e5a406664f0d.mp4" type="video/mp4">
-Vide play not supported.
+<video width="100%" width="100%" autoplay loop="true" name="rapt" src="https://user-images.githubusercontent.com/47111091/148347839-04d2075c-5e16-4ad9-a43d-e5a406664f0d.mp4" type="video/mp4">
+<br>
+[Vide play not supported...]
+<br>
 </video>
 
 **`rapt2`** is a *kawaii* toy implementation of `apt`(Debian Package Manager) written in Rust (Original `apt` is written in C++).

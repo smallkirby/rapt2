@@ -1,24 +1,34 @@
 # rapt2
 
+<video controls width="100%" width="100%" autoplay loop="true" src="https://user-images.githubusercontent.com/47111091/148347839-04d2075c-5e16-4ad9-a43d-e5a406664f0d.mp4" type="video/mp4">
+Vide play not supported.
+</video>
+
 **`rapt2`** is a *kawaii* toy implementation of `apt`(Debian Package Manager) written in Rust (Original `apt` is written in C++).
 
 **`rapt2`** is simplified, made of only 3K LOC of Rust (as of 2021.12.30). Hence, it has limitation compared to original one. But no problem. *kawaii* is justice.
 
 - `update`
 
-![update](/img/update-2.png)
+![update](/img/update.png)
 
 - `install`
 
-![install](/img/install-1.png)
+![install](/img/install.png)
 
 - `dep`
 
-![dep](/img/dep-1.png)
+![dep](/img/dep.png)
 
 - `list`
 
-![list](/img/list-1.png)
+![list](/img/list.png)
+
+- `upgrade`
+
+![upgrade](/img/upgrade.png)
+
+- `clean` / `purge`
 
 ## Development
 

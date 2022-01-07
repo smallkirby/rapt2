@@ -146,7 +146,7 @@ pub fn execute(context: &Context, _args: &UpgradeArgs) -> Result<(), RaptError> 
   );
 
   let prog_style = ProgressStyle::default_bar()
-    .template("   install   {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
+    .template(" install   {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}")
     .progress_chars("##-");
   let progress = ProgressBar::new(sorted_pwss.len() as u64 * 2);
   progress.set_style(prog_style);

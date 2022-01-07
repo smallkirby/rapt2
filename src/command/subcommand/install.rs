@@ -173,7 +173,7 @@ fn show_to_install_packages(pwss: &[PackageWithSource], target: &str) {
     .collect();
   println!(
     "  {} Upgraded({}):",
-    EMOJI_SPARKLES,
+    EMOJI_UP,
     style(upgrades.len()).bold().cyan()
   );
   for upgrade in upgrades {

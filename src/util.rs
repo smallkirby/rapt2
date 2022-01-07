@@ -30,6 +30,7 @@ pub mod emoji {
   pub static EMOJI_LOCK: Emoji<'_, '_> = Emoji("🔐", "");
   pub static EMOJI_CROSS: Emoji<'_, '_> = Emoji("❌", "");
   pub static EMOJI_DOWN: Emoji<'_, '_> = Emoji("⬇️", "");
+  pub static EMOJI_UP: Emoji<'_, '_> = Emoji("⬆️", "");
   pub static EMOJI_TARGET: Emoji<'_, '_> = Emoji("🎯", "");
   pub static EMOJI_EARTH: Emoji<'_, '_> = Emoji("🌎", "");
   pub static EMOJI_INFORMATION: Emoji<'_, '_> = Emoji("ℹ️", "");

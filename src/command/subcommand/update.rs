@@ -5,7 +5,7 @@
 use super::{super::error::RaptError, UpdateArgs};
 use crate::{
   context::Context,
-  dpkg,
+  dpkg::{self, client::PackageStatus},
   net::package::PackageDownloadClient,
   package::{client::*, package::*},
   source::{
@@ -94,6 +94,12 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
   let obsolute_packages = dpkg_client.get_obsolute_packages(&total_packages)?;
 
   // show result
+  show_upgradable_packages(&obsolute_packages);
+
+  Ok(())
+}
+
+fn show_upgradable_packages(obsolute_packages: &Vec<PackageStatus>) {
   if obsolute_packages.is_empty() {
     println!(
       "{} {}",
@@ -107,19 +113,17 @@ pub fn execute(context: &Context, _args: &UpdateArgs) -> Result<(), RaptError> {
       style(obsolute_packages.len()).bold(),
     );
     for package in obsolute_packages {
-      let new_version = if let Some(v) = package.new_version {
+      let new_version = if let Some(v) = &package.new_version {
         v.to_string()
       } else {
         "".into()
       };
       println!(
         "\t- {} ({} -> {})",
-        style(package.package.name).yellow(),
+        style(&package.package.name).yellow(),
         style(package.package.version.to_string()).dim(),
         style(new_version).dim(),
       );
     }
   }
-
-  Ok(())
 }
